@@ -68,9 +68,28 @@ npm install -g @deepseek-ai/dsh
 
 > Linux / macOS 若权限不足，加 `sudo`：`sudo npm install -g @deepseek-ai/dsh`
 
-验证：`dsh --version`
+**验证安装（必须通过再进行下一步）**
 
-> **找不到 `dsh` 命令？** DSH 安装后，npm 全局目录（`C:\Users\<你>\AppData\Roaming\npm`）需要在系统 PATH 中（npm 通常会自动添加）。如果安装后终端仍报 `不是内部或外部命令`，**关闭当前终端并重新打开一个新窗口**即可，不需要手动修改 PATH。
+```bash
+# 关闭当前终端，重新打开一个新终端窗口，然后执行：
+dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
+```
+
+> ⚠️ 如果报 `dsh 不是内部或外部命令`，说明 npm 全局目录不在 PATH 中。按以下步骤修复：
+>
+> **Windows**：
+> 1. 先确认 npm 安装目录：在 cmd 中执行 `npm root -g`，记下输出的路径（通常是 `C:\Users\<你>\AppData\Roaming\npm`）
+> 2. 按 `Win + R` → 输入 `sysdm.cpl` → 回车
+> 3. 点「高级」→「环境变量」→ 在**用户变量**中找到 `Path`，双击编辑
+> 4. 点「新建」，粘贴上面记下的 npm 全局目录路径，确定保存
+> 5. **关闭所有终端窗口，重新打开**，再执行 `dsh --version`
+>
+> **macOS / Linux**：
+> ```bash
+> # 将 npm 全局目录加入 PATH（写入 shell 配置文件，重启终端生效）
+> echo 'export PATH="$(npm root -g)/../bin:$PATH"' >> ~/.bashrc
+> source ~/.bashrc
+> ```
 
 ### 3.1 获取插件源码
 
