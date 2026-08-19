@@ -70,9 +70,9 @@ npm install -g @deepseek-ai/dsh
 
 验证：`dsh --version`
 
-### 3.1 获取插件源码
+> **找不到 `dsh` 命令？** DSH 安装后，npm 全局目录（`C:\Users\<你>\AppData\Roaming\npm`）需要在系统 PATH 中（npm 通常会自动添加）。如果安装后终端仍报 `不是内部或外部命令`，**关闭当前终端并重新打开一个新窗口**即可，不需要手动修改 PATH。
 
-将 `dsh-wps-plugin` 插件目录放到你的工作目录中。
+### 3.1 获取插件源码
 
 ### 3.2 安装插件到 DSH
 
