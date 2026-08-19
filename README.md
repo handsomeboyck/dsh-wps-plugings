@@ -19,29 +19,86 @@ DeepSeek Harness 金山文档 WPS 能力集成插件
 - DeepSeek Harness (DSH) 已安装
 - WPS 账号（个人或企业）
 
-### 安装插件
+### 1. 安装 Node.js
+
+DSH 与插件运行在 Node.js 之上，需 Node.js **>= 18.0.0**（建议安装 LTS 版本）。
+
+**方式一：官网安装包（Windows / macOS / Linux 通用）**
+
+前往 [nodejs.org](https://nodejs.org) 下载 **LTS** 版本安装包并安装。
+
+**方式二：包管理器安装**
+
+```bash
+# Windows（用管理员 PowerShell 或使用 winget）
+winget install OpenJS.NodeJS.LTS
+
+# macOS（Homebrew）
+brew install node
+
+# Ubuntu / Debian
+sudo apt install nodejs npm
+
+# 使用 nvm 管理多个版本（macOS / Linux 推荐）
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+nvm install --lts
+nvm use --lts
+```
+
+**验证安装**
+
+```bash
+node --version   # 应输出 v18.0.0 或更高，例如 v20.x / v22.x
+npm --version    # 应输出 v9.0.0 或更高
+```
+
+### 2. 安装 DeepSeek Harness (DSH)
+
+DSH 通过 npm 全局安装，安装后提供 `dsh` 命令。
+
+```bash
+npm install -g @deepseek-ai/dsh
+```
+
+> 若因权限不足报错（常见于 Linux / macOS），在命令前加 `sudo`：
+> ```bash
+> sudo npm install -g @deepseek-ai/dsh
+> ```
+
+**验证安装**
+
+```bash
+dsh --version      # 应输出 dsh 版本号
+dsh --help         # 查看可用命令
+```
+
+安装完成后，DSH 会创建默认 profile 目录（`~/.dsh/profiles/<name>`），后续插件安装都在该目录下执行。
+
+### 3. 安装插件
 
 **方式一：从 npm 安装（推荐）**
 
 ```bash
-# 在 DSH profile 目录中执行
-cd ~/.dsh/profile
+# 进入 DSH profile 目录
+cd ~/.dsh/profiles/web
 dsh plugin add dsh-wps-plugin
 ```
 
 **方式二：从 GitHub 安装**
 
 ```bash
-cd ~/.dsh/profile
-dsh plugin add https://github.com/<your-org>/dsh-wps-plugin
+cd ~/.dsh/profiles/web
+dsh plugin add https://github.com/handsomeboyck/dsh-wps-plugings
 ```
 
 **方式三：本地目录（开发调试）**
 
 ```bash
-cd ~/.dsh/profile
-dsh plugin add ./dsh-wps-plugin
+cd ~/.dsh/profiles/web
+dsh plugin add /path/to/dsh-wps-plugin
 ```
+
+> 如果你使用的是旧版本 DSH，profile 目录可能是 `~/.dsh/profile`（无 `s`），请以 `dsh --help` 输出的实际路径为准。
 
 ### 从源码构建（可选）
 

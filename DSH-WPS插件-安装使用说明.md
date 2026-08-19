@@ -24,7 +24,7 @@
 
 | 项目 | 要求 |
 |------|------|
-| **Node.js** | ≥ 18.0.0 |
+| **Node.js** | ≥ 18.0.0（建议 LTS 版本） |
 | **DeepSeek Harness** | 已安装并配置完成 |
 | **WPS 账号** | 个人账号或企业账号均可 |
 | **网络** | 可正常访问 `mcp-center.wps.cn` |
@@ -32,11 +32,43 @@
 > 💡 可在命令行检查版本：
 > ```bash
 > node --version   # 应输出 v18.0.0 或更高
+> dsh --version    # 应输出 dsh 版本号
 > ```
 
 ---
 
 ## 三、安装步骤
+
+### 3.0 安装 Node.js 与 DeepSeek Harness（首次使用）
+
+**Step 1：安装 Node.js（≥ 18.0.0）**
+
+前往 [nodejs.org](https://nodejs.org) 下载 **LTS** 版本安装包并安装；或使用包管理器：
+
+```bash
+# Windows
+winget install OpenJS.NodeJS.LTS
+
+# macOS
+brew install node
+
+# Ubuntu / Debian
+sudo apt install nodejs npm
+```
+
+验证：`node --version`
+
+**Step 2：安装 DeepSeek Harness (DSH)**
+
+DSH 通过 npm 全局安装：
+
+```bash
+npm install -g @deepseek-ai/dsh
+```
+
+> Linux / macOS 若权限不足，加 `sudo`：`sudo npm install -g @deepseek-ai/dsh`
+
+验证：`dsh --version`
 
 ### 3.1 获取插件源码
 
@@ -45,11 +77,17 @@
 ### 3.2 安装插件到 DSH
 
 ```bash
-# 进入 DSH profile 目录
-cd ~/.dsh/profile
+# 进入 DSH profile 目录（以 dsh --help 输出的实际路径为准）
+cd ~/.dsh/profiles/web
 
-# 添加插件
+# 添加插件（本地目录方式）
 dsh plugin add ./dsh-wps-plugin
+
+# 或从 GitHub 安装
+# dsh plugin add https://github.com/handsomeboyck/dsh-wps-plugings
+
+# 或从 npm 安装
+# dsh plugin add dsh-wps-plugin
 ```
 
 ### 3.3 构建插件（可选）

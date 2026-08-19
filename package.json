@@ -52,10 +52,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/<your-org>/dsh-wps-plugin.git"
+    "url": "https://github.com/handsomeboyck/dsh-wps-plugings.git"
   },
   "bugs": {
-    "url": "https://github.com/<your-org>/dsh-wps-plugin/issues"
+    "url": "https://github.com/handsomeboyck/dsh-wps-plugings/issues"
   },
-  "homepage": "https://github.com/<your-org>/dsh-wps-plugin#readme"
+  "homepage": "https://github.com/handsomeboyck/dsh-wps-plugings#readme"
 }
