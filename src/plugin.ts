@@ -375,16 +375,9 @@ const name = 'tool-wps';
  * WPS 插件主函数
  */
 function apply(ctx: any, config: any = Config) {
-  // 添加系统提示（当前 DSH 版本无 systemPrompt 服务时自动跳过）
-  try {
-    ctx.systemPrompt?.section?.({
-      name: 'tool:wps',
-      order: 120,
-      text: 'Use the WPS tools (sheet.*, wps.*, drive.*) to interact with Kingsoft Office documents, spreadsheets, and cloud storage. These tools require authentication - the first use will trigger a browser login flow.'
-    });
-  } catch (error) {
-    console.warn('[WPS Plugin] 无法注册系统提示段（可忽略）:', error);
-  }
+  // 注：当前 DSH (0.1.0-rc.7) 无 systemPrompt 服务。
+  // 不要在未注入的情况下访问 ctx.systemPrompt，否则 Cordis 会抛
+  // "cannot get property \"systemPrompt\" without inject" 并刷警告日志。
 
   // 注册所有 WPS 工具
   // DSH 工具契约：output.schema 约束 execute 的返回值；output.render 必须返回
