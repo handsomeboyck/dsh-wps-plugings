@@ -90,47 +90,38 @@ dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
 
 安装完成后，DSH 会创建默认 profile 目录（`~/.dsh/profiles/<name>`），后续插件安装都在该目录下执行。
 
-### 3. 安装插件
+### 3. 安装并启用插件
 
-**方式一：下载 ZIP 安装（最简单）**
+**Windows 一键安装（最简单）**
 
-1. 打开 https://github.com/handsomeboyck/dsh-wps-plugings
-2. 点绿色「Code」→「Download ZIP」
-3. 解压到本地，例如 `C:\dsh-wps-plugin`
-4. 执行：
+1. 打开 https://github.com/handsomeboyck/dsh-wps-plugings，点绿色「Code」→「Download ZIP」
+2. 解压到 `C:\dsh-wps-plugin`
+3. 在 cmd 中执行以下两条命令：
 
-```bash
+```cmd
 dsh plugin --profile web add C:\dsh-wps-plugin
+powershell -Command "(Get-Content $env:USERPROFILE\.dsh\profiles\web\cordis.patch.yml) -replace '^\[\]$', '- id: tool-wps' + [char]10 + '  name: WPS 工具集' + [char]10 + '  disabled: false' + [char]10 + '  config:' + [char]10 + '    tool-wps:' + [char]10 + '      enabled: true' + [char]10 + '      timeoutMs: 30000' | Set-Content $env:USERPROFILE\.dsh\profiles\web\cordis.patch.yml"
 ```
 
-**方式二：本地目录安装**
+然后重启 DSH：
+
+```cmd
+dsh web
+```
+
+**Linux / macOS 一键安装**
 
 ```bash
 dsh plugin --profile web add /path/to/dsh-wps-plugin
-```
-
-> profile 名称以 `dsh --help` 输出的实际为准（常见为 `web`）。
-
-### 4. 启用插件
-
-安装后，还需要在 profile 的配置文件中**启用插件**才能生效。
-
-编辑 `~/.dsh/profiles/web/cordis.patch.yml`，添加以下内容：
-
-```yaml
+cat > ~/.dsh/profiles/web/cordis.patch.yml << 'EOF'
 - id: tool-wps
   name: WPS 工具集
-  description: 金山文档 WPS 能力集成
   disabled: false
   config:
     tool-wps:
       enabled: true
       timeoutMs: 30000
-```
-
-保存后重启 DSH 即可：
-
-```bash
+EOF
 dsh web
 ```
 
