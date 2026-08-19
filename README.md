@@ -79,26 +79,22 @@ dsh --help         # 查看可用命令
 **方式一：从 npm 安装（推荐）**
 
 ```bash
-# 进入 DSH profile 目录
-cd ~/.dsh/profiles/web
-dsh plugin add dsh-wps-plugin
+dsh plugin --profile web add dsh-wps-plugin
 ```
 
 **方式二：从 GitHub 安装**
 
 ```bash
-cd ~/.dsh/profiles/web
-dsh plugin add https://github.com/handsomeboyck/dsh-wps-plugings
+dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings
 ```
 
 **方式三：本地目录（开发调试）**
 
 ```bash
-cd ~/.dsh/profiles/web
-dsh plugin add /path/to/dsh-wps-plugin
+dsh plugin --profile web add /path/to/dsh-wps-plugin
 ```
 
-> 如果你使用的是旧版本 DSH，profile 目录可能是 `~/.dsh/profile`（无 `s`），请以 `dsh --help` 输出的实际路径为准。
+> profile 名称以 `dsh --help` 输出的实际为准（常见为 `web`、`headless`、`tui`）；旧版本 DSH 目录可能是 `~/.dsh/profile`（无 `s`）。
 
 ### 从源码构建（可选）
 
@@ -107,6 +103,38 @@ cd dsh-wps-plugin
 npm install
 npm run build
 ```
+
+### 更新插件
+
+`dsh plugin` 会把参数原样转发给 **pnpm**（DSH 依赖 pnpm 管理插件，安装 DSH 时会一并带上）。更新插件的命令与 pnpm 完全一致：
+
+**更新到最新版本**
+
+```bash
+dsh plugin --profile web update dsh-wps-plugin
+# 或使用 pnpm 的 up 别名
+dsh plugin --profile web up dsh-wps-plugin
+```
+
+**交互式选择版本**
+
+```bash
+dsh plugin --profile web update -i dsh-wps-plugin
+```
+
+**升级到指定版本**
+
+```bash
+dsh plugin --profile web add dsh-wps-plugin@0.2.0
+```
+
+**更新 profile 里的全部插件**
+
+```bash
+dsh plugin --profile web update
+```
+
+> **发布方注意**：pnpm 依据 `package.json` 的 `version` 字段判断是否有新版本。若只推送 GitHub 而未更新 `version`，`update` 可能拉不到新版本。因此每次发版都应：① 递增 `version`（如 `0.1.0` → `0.2.0`）→ ② `git push` 推送 → ③ `npm publish` 发布。使用本地目录方式开发的，只需重新 `npm run build` 并重启 DSH 即可生效，无需"更新"。
 
 ## 使用方式
 

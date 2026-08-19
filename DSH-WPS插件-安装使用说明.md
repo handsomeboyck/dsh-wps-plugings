@@ -77,18 +77,13 @@ npm install -g @deepseek-ai/dsh
 ### 3.2 安装插件到 DSH
 
 ```bash
-# 进入 DSH profile 目录（以 dsh --help 输出的实际路径为准）
-cd ~/.dsh/profiles/web
-
-# 添加插件（本地目录方式）
-dsh plugin add ./dsh-wps-plugin
-
-# 或从 GitHub 安装
-# dsh plugin add https://github.com/handsomeboyck/dsh-wps-plugings
-
-# 或从 npm 安装
-# dsh plugin add dsh-wps-plugin
+# profile 名称以 dsh --help 输出的实际为准（常见为 web、headless、tui）
+dsh plugin --profile web add ./dsh-wps-plugin          # 本地目录方式
+# dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings   # 从 GitHub 安装
+# dsh plugin --profile web add dsh-wps-plugin                                       # 从 npm 安装
 ```
+
+> `dsh plugin` 会把参数原样转发给 pnpm，因此在 profile 目录中执行 pnpm 命令即可管理插件。
 
 ### 3.3 构建插件（可选）
 
@@ -105,6 +100,28 @@ npm run build        # 编译 TypeScript
 ### 3.4 验证安装
 
 安装成功后，插件会自动注册到 DSH，AI 助手即可调用 WPS 相关工具。
+
+### 3.5 更新插件
+
+`dsh plugin` 依赖 **pnpm** 管理插件（安装 DSH 时会一并带上），更新命令与 pnpm 完全一致：
+
+```bash
+# 更新到最新版本
+dsh plugin --profile web update dsh-wps-plugin
+# 或 pnpm 的 up 别名
+dsh plugin --profile web up dsh-wps-plugin
+
+# 交互式选择版本
+dsh plugin --profile web update -i dsh-wps-plugin
+
+# 升级到指定版本
+dsh plugin --profile web add dsh-wps-plugin@0.2.0
+
+# 更新 profile 里的全部插件
+dsh plugin --profile web update
+```
+
+> **发布方注意**：pnpm 依据 `package.json` 的 `version` 字段判断是否有新版本。若只推送 GitHub 而未更新 `version`，`update` 可能拉不到新版本。因此每次发版都应：① 递增 `version`（如 `0.1.0` → `0.2.0`）→ ② `git push` 推送 → ③ `npm publish` 发布。使用本地目录方式开发的，只需重新 `npm run build` 并重启 DSH 即可生效，无需"更新"。
 
 ---
 
