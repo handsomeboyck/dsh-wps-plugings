@@ -97,12 +97,31 @@ dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
 
 > ⚠️ 此包尚未发布到 npm registry，请**不要**使用 `dsh-wps-plugin` 作为包名安装（会报 404）。请使用以下方式之一：
 
-```bash
-# 从 GitHub 安装（推荐）
-dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings
+**方式一：从 GitHub 安装（推荐）**
 
-# 本地目录方式（开发调试）
-# dsh plugin --profile web add /path/to/dsh-wps-plugin
+需要先安装 **Git**（pnpm 通过 git 从 GitHub 拉取代码）。
+
+- Windows：https://git-scm.com/download/win
+- macOS：`xcode-select --install`
+- Linux：`sudo apt install git`（Ubuntu/Debian）或 `sudo yum install git`（CentOS/RHEL）
+
+安装 Git 后，**关闭并重新打开终端**，然后执行：
+
+```bash
+dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings
+```
+
+**方式二：下载 ZIP 包本地安装（无需 Git）**
+
+如果不想安装 Git，可以从 GitHub 下载 ZIP 包后本地安装：
+
+1. 浏览器打开 https://github.com/handsomeboyck/dsh-wps-plugings
+2. 点绿色「Code」按钮 → 「Download ZIP」
+3. 解压到本地目录，例如 `C:\dsh-wps-plugin`
+4. 执行：
+
+```bash
+dsh plugin --profile web add C:\dsh-wps-plugin
 ```
 
 > `dsh plugin` 会把参数原样转发给 pnpm，因此在 profile 目录中执行 pnpm 命令即可管理插件。
