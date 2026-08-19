@@ -95,74 +95,32 @@ dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
 
 ### 3.2 安装插件到 DSH
 
-> ⚠️ 此包尚未发布到 npm registry，请**不要**使用 `dsh-wps-plugin` 作为包名安装（会报 404）。请使用以下方式之一：
+**方式一：下载 ZIP 安装（最简单）**
 
-**方式一：从 GitHub 安装（推荐）**
-
-需要先安装 **Git**（pnpm 通过 git 从 GitHub 拉取代码）。
-
-- Windows：https://git-scm.com/download/win
-- macOS：`xcode-select --install`
-- Linux：`sudo apt install git`（Ubuntu/Debian）或 `sudo yum install git`（CentOS/RHEL）
-
-安装 Git 后，**关闭并重新打开终端**，然后执行：
-
-```bash
-dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings
-```
-
-**方式二：下载 ZIP 包本地安装（无需 Git）**
-
-如果不想安装 Git，可以从 GitHub 下载 ZIP 包后本地安装：
-
-1. 浏览器打开 https://github.com/handsomeboyck/dsh-wps-plugings
-2. 点绿色「Code」按钮 → 「Download ZIP」
-3. 解压到本地目录，例如 `C:\dsh-wps-plugin`
+1. 打开 https://github.com/handsomeboyck/dsh-wps-plugings
+2. 点绿色「Code」→「Download ZIP」
+3. 解压到本地，例如 `C:\dsh-wps-plugin`
 4. 执行：
 
 ```bash
 dsh plugin --profile web add C:\dsh-wps-plugin
 ```
 
-> `dsh plugin` 会把参数原样转发给 pnpm，因此在 profile 目录中执行 pnpm 命令即可管理插件。
-
-### 3.3 构建插件（可选）
-
-如果插件提供的是源码，需要先构建：
+**方式二：本地目录安装**
 
 ```bash
-cd dsh-wps-plugin
-npm install          # 安装依赖
-npm run build        # 编译 TypeScript
+dsh plugin --profile web add /path/to/dsh-wps-plugin
 ```
 
-构建完成后会生成 `dist/` 目录，插件即可使用。
+> profile 名称以 `dsh --help` 输出的实际为准（常见为 `web`）。
 
-### 3.4 验证安装
+### 3.3 验证安装
 
-安装成功后，插件会自动注册到 DSH，AI 助手即可调用 WPS 相关工具。
+安装成功后，重启 DSH，插件会自动注册，AI 助手即可调用 WPS 相关工具。
 
-### 3.5 更新插件
+### 3.4 更新插件
 
-`dsh plugin` 依赖 **pnpm** 管理插件（安装 DSH 时会一并带上），更新命令与 pnpm 完全一致：
-
-```bash
-# 更新到最新版本
-dsh plugin --profile web update dsh-wps-plugin
-# 或 pnpm 的 up 别名
-dsh plugin --profile web up dsh-wps-plugin
-
-# 交互式选择版本
-dsh plugin --profile web update -i dsh-wps-plugin
-
-# 升级到指定版本
-dsh plugin --profile web add dsh-wps-plugin@0.2.0
-
-# 更新 profile 里的全部插件
-dsh plugin --profile web update
-```
-
-> **发布方注意**：pnpm 依据 `package.json` 的 `version` 字段判断是否有新版本。若只推送 GitHub 而未更新 `version`，`update` 可能拉不到新版本。因此每次发版都应：① 递增 `version`（如 `0.1.0` → `0.2.0`）→ ② `git push` 推送 → ③ `npm publish` 发布。使用本地目录方式开发的，只需重新 `npm run build` 并重启 DSH 即可生效，无需"更新"。
+重新下载最新 ZIP 包，解压覆盖原目录，然后重启 DSH 即可。
 
 ---
 
