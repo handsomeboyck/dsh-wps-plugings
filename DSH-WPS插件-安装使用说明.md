@@ -114,7 +114,30 @@ dsh plugin --profile web add /path/to/dsh-wps-plugin
 
 > profile 名称以 `dsh --help` 输出的实际为准（常见为 `web`）。
 
-### 3.3 验证安装
+### 3.3 启用插件
+
+安装后，还需要在 profile 的配置文件中**启用插件**才能生效。
+
+编辑 `~/.dsh/profiles/web/cordis.patch.yml`，添加以下内容：
+
+```yaml
+- id: tool-wps
+  name: WPS 工具集
+  description: 金山文档 WPS 能力集成
+  disabled: false
+  config:
+    tool-wps:
+      enabled: true
+      timeoutMs: 30000
+```
+
+保存后重启 DSH 即可：
+
+```bash
+dsh web
+```
+
+### 3.4 验证安装
 
 安装成功后，重启 DSH，插件会自动注册，AI 助手即可调用 WPS 相关工具。
 
