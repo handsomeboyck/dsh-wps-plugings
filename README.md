@@ -92,19 +92,15 @@ dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
 
 ### 3. 安装插件
 
-**方式一：从 npm 安装（推荐）**
+> ⚠️ 此包尚未发布到 npm registry，请**不要**使用 `dsh-wps-plugin` 作为包名安装（会报 404）。请使用以下方式之一：
 
-```bash
-dsh plugin --profile web add dsh-wps-plugin
-```
-
-**方式二：从 GitHub 安装**
+**方式一：从 GitHub 安装（推荐）**
 
 ```bash
 dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings
 ```
 
-**方式三：本地目录（开发调试）**
+**方式二：本地目录安装（开发调试）**
 
 ```bash
 dsh plugin --profile web add /path/to/dsh-wps-plugin

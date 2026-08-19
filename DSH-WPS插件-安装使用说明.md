@@ -95,11 +95,14 @@ dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
 
 ### 3.2 安装插件到 DSH
 
+> ⚠️ 此包尚未发布到 npm registry，请**不要**使用 `dsh-wps-plugin` 作为包名安装（会报 404）。请使用以下方式之一：
+
 ```bash
-# profile 名称以 dsh --help 输出的实际为准（常见为 web、headless、tui）
-dsh plugin --profile web add ./dsh-wps-plugin          # 本地目录方式
-# dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings   # 从 GitHub 安装
-# dsh plugin --profile web add dsh-wps-plugin                                       # 从 npm 安装
+# 从 GitHub 安装（推荐）
+dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings
+
+# 本地目录方式（开发调试）
+# dsh plugin --profile web add /path/to/dsh-wps-plugin
 ```
 
 > `dsh plugin` 会把参数原样转发给 pnpm，因此在 profile 目录中执行 pnpm 命令即可管理插件。
