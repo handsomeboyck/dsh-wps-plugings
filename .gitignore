@@ -1,0 +1,35 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+*.tsbuildinfo
+
+# 空 schema 目录（暂未使用）
+schemas/
+
+# 打包产物
+*.zip
+*.tgz
+*.tar.gz
+
+# 运行时凭证缓存（绝不能提交！）
+.dsh-wps-cache/
+token.json
+*.token
+.wps-token.json
+
+# 环境与本地配置
+.env
+.env.local
+.env.*.local
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
