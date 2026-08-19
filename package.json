@@ -1,6 +1,6 @@
 {
   "name": "dsh-wps-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DeepSeek Harness 插件 - 金山文档 WPS 能力集成",
   "type": "module",
   "main": "dist/index.js",
@@ -16,7 +16,8 @@
     "cordis.patch.yml",
     "schemas",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "COMMERCIAL-LICENSE.md"
   ],
   "dsh": {
     "bundle": {
@@ -50,7 +51,7 @@
     "kdocs",
     "cordis"
   ],
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://github.com/handsomeboyck/dsh-wps-plugings.git"

@@ -3,8 +3,8 @@
 > DeepSeek Harness（DSH）金山文档 / WPS 能力集成插件。
 > 装上之后，你可以直接在 **DeepSeek Harness 对话里**用自然语言操作 WPS 云文档：列文件、读文档、创建/上传文档、搜索文件等。
 
-[![npm](https://img.shields.io/badge/dsh--wps--plugin-0.1.0-blue)](https://github.com/handsomeboyck/dsh-wps-plugings)
-[![license](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![npm](https://img.shields.io/badge/dsh--wps--plugin-0.1.1-blue)](https://github.com/handsomeboyck/dsh-wps-plugings)
+[![license](https://img.shields.io/badge/license-AGPL--3.0--or--Commercial-blue)](./LICENSE)
 
 ---
 
@@ -73,7 +73,7 @@ dsh --version
 DSH 智能体会自动完成：
 
 1. 把插件包安装到 profile：`dsh plugin --profile web add <包源>`（`<包源>` 为 npm 包名 / Git 地址 / 本地路径任一）
-   - ℹ️ **前提**：直接写包名 `dsh-wps-plugin` 时，DSH 会让 pnpm 从 npm 官方源解析。本包**已发布到 npm**（`dsh-wps-plugin@0.1.0`），因此「一句话安装」直接成立；也可改用 Git 地址或本地路径（见方式二 / 方式三）。
+   - ℹ️ **前提**：直接写包名 `dsh-wps-plugin` 时，DSH 会让 pnpm 从 npm 官方源解析。本包**已发布到 npm**（`dsh-wps-plugin@0.1.1`），因此「一句话安装」直接成立；也可改用 Git 地址或本地路径（见方式二 / 方式三）。
 2. 在 `~/.dsh/profiles/web/package.json` 的 `dsh.profile.bundles` 中加入 `"dsh-wps-plugin"`
 3. 在 `~/.dsh/profiles/web/cordis.patch.yml` 中写入激活行：
    ```yaml
@@ -287,6 +287,11 @@ dsh-wps-plugin/
 - [WPS 开放平台](https://open.wps.cn)
 - [本仓库](https://github.com/handsomeboyck/dsh-wps-plugings)
 
-## License
+## License（双许可）
 
-MIT
+本软件采用**双许可（Dual Licensing）**模式：
+
+- **开源许可（默认）**：[AGPL-3.0-only](https://www.gnu.org/licenses/agpl-3.0.html)，完整条款见 [`LICENSE`](./LICENSE)。可免费使用、修改、分发，但衍生作品必须开源，SaaS 场景须公开源码。
+- **商业授权**：如需在闭源商业产品中集成/销售，或以 SaaS 形式提供而不履行 AGPL 义务，必须事先获得作者书面商业授权，详见 [`COMMERCIAL-LICENSE.md`](./COMMERCIAL-LICENSE.md)（联系邮箱：839567748@qq.com）。
+
+> 未经商业授权，不得闭源商用。
