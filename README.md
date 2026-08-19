@@ -179,6 +179,8 @@ const content = await plugin.callTool('read_file', {
 | `search_files` | 搜索文件 | keyword |
 | `list_files` | 列出文件夹内容 | parent_id |
 | `list_my_files` | 列出我的云文档根目录 | 无 |
+| `list_latest_items` | 获取最近访问的文档列表 | 无 |
+| `list_star_items` | 获取收藏（星标）列表 | 无 |
 | `create_file` | 创建文件或文件夹 | name, file_type |
 | `create_file_with_content` | 创建带内容的文件 | name |
 | `read_file` | 读取文件内容 | file_id 或 link_id 或 url |

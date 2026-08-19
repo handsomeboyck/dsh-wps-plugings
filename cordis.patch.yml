@@ -1,13 +1,5 @@
 # DSH WPS Plugin - Cordis Patch
 # 金山文档 WPS 能力集成插件
-
-- id: tool-wps
-  name: WPS 工具集
-  description: 金山文档文档、表格、PPT、云盘等操作工具
-  disabled: false
-
-  config:
-    # WPS 工具配置
-    tool-wps:
-      enabled: true
-      timeoutMs: 30000
+# 注：本 bundle 的激活行由 profile 用户层（cordis.patch.yml）以 insert 方式注册，
+# 此处保持空列表，避免下次启动时与用户层重复插入同 id 行。
+[]

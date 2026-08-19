@@ -30,6 +30,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1",
     "keytar": "^7.9.0",
     "open": "^10.1.0"
   },
