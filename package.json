@@ -3,12 +3,12 @@
   "version": "0.2.0",
   "description": "DeepSeek Harness 插件 - 金山文档 WPS 能力集成",
   "type": "module",
-  "main": "dist/plugin.js",
-  "types": "dist/plugin.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/plugin.d.ts",
-      "import": "./dist/plugin.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -16,7 +16,8 @@
     "cordis.patch.yml",
     "schemas",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "COMMERCIAL-LICENSE.md"
   ],
   "dsh": {
     "bundle": {
@@ -30,6 +31,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1",
     "keytar": "^7.9.0",
     "open": "^10.1.0"
   },
@@ -49,7 +51,7 @@
     "kdocs",
     "cordis"
   ],
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/handsomeboyck/dsh-wps-plugings.git"

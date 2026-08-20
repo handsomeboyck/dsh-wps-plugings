@@ -1,155 +1,170 @@
 # DSH WPS Plugin
 
-DeepSeek Harness 金山文档 WPS 能力集成插件
+> DeepSeek Harness（DSH）金山文档 / WPS 能力集成插件。
+> 装上之后，你可以直接在 **DeepSeek Harness 对话里**用自然语言操作 WPS 云文档：列文件、读文档、创建/上传文档、搜索文件等。
+
+[![npm](https://img.shields.io/badge/dsh--wps--plugin-0.2.0-blue)](https://github.com/handsomeboyck/dsh-wps-plugings)
+[![license](https://img.shields.io/badge/license-AGPL--3.0--or--Commercial-blue)](./LICENSE)
+
+---
+
+## 目录
+
+- [功能特性](#功能特性)
+- [前置条件](#前置条件)
+- [安装](#安装)
+  - [方式一：对话式安装（推荐，最简单）](#方式一对话式安装推荐最简单)
+  - [方式二：命令行手动安装](#方式二命令行手动安装)
+  - [方式三：本地源码安装（开发者）](#方式三本地源码安装开发者)
+- [首次授权](#首次授权)
+- [使用方式](#使用方式)
+  - [对话中使用（推荐）](#对话中使用推荐)
+  - [编程式调用（API）](#编程式调用api)
+- [内置工具一览](#内置工具一览)
+- [认证与 Token 管理](#认证与-token-管理)
+  - [存储位置](#存储位置)
+  - [切换账号 / 重新授权](#切换账号--重新授权)
+- [故障排除](#故障排除)
+- [开发](#开发)
+- [相关链接](#相关链接)
+- [License](#license)
+
+---
 
 ## 功能特性
 
-- 🔐 **一键授权** - 浏览器自动打开 WPS 登录页，用户登录即可完成授权
-- 📝 **文档操作** - 创建、读取、编辑在线文档
-- 📊 **表格操作** - 读写单元格、批量操作、查找替换
-- 📁 **云盘管理** - 文件列表、搜索、创建、删除、移动
-- 🔒 **安全存储** - Token 存储在系统密钥链，不明文暴露
-- 🔗 **MCP 协议** - 支持标准 MCP Session 管理
+- 🔐 **一键浏览器授权**：首次调用工具时自动打开 WPS 登录页，登录即完成授权，无需手动配 Key
+- 📁 **云盘管理**：列出/搜索/创建/上传/下载云文档，读取文档内容
+- ⭐ **个性化列表**：最近访问、收藏（星标）列表
+- 🔒 **安全存储**：Token 优先存入系统密钥链（Windows 凭据管理器 / macOS Keychain），不明文落盘
+- 🔗 **MCP 协议**：完整 MCP Session 管理（initialize → tools/call），Session 失效自动重建
+- ♻️ **自动续期**：Token 过期或 401/403 时自动清除并重新拉起授权
+
+---
+
+## 前置条件
+
+| 依赖 | 版本要求 | 说明 |
+| --- | --- | --- |
+| Node.js | >= 18.0.0 | 建议 LTS（20/22） |
+| DeepSeek Harness (DSH) | 0.1.0-rc.x | `npm install -g @deepseek-ai/dsh` |
+| WPS 账号 | 个人账号 | 授权走 WPS OAuth，登录一次即可 |
+
+```bash
+# 安装 DSH（全局）
+npm install -g @deepseek-ai/dsh
+
+# 验证
+dsh --version
+```
+
+---
 
 ## 安装
 
-### 前置条件
+### 方式一：对话式安装（推荐，最简单）
 
-- Node.js >= 18.0.0
-- DeepSeek Harness (DSH) 已安装
-- WPS 账号（个人或企业）
+**是的——直接通过对话让 DeepSeek Harness 帮你安装即可。**
 
-### 1. 安装 Node.js
+你只需要在 DSH 对话里说一句：
 
-DSH 与插件运行在 Node.js 之上，需 Node.js **>= 18.0.0**（建议安装 LTS 版本）。
+> 「请帮我安装 dsh-wps-plugin 插件」
 
-**方式一：官网安装包（Windows / macOS / Linux 通用）**
+DSH 智能体会自动完成：
 
-前往 [nodejs.org](https://nodejs.org) 下载 **LTS** 版本安装包并安装。
+1. 把插件包安装到 profile：`dsh plugin --profile web add <包源>`（`<包源>` 为 npm 包名 / Git 地址 / 本地路径任一）
+   - ℹ️ **前提**：直接写包名 `dsh-wps-plugin` 时，DSH 会让 pnpm 从 npm 官方源解析。本包**已发布到 npm**（`dsh-wps-plugin@0.2.0`），因此「一句话安装」直接成立；也可改用 Git 地址或本地路径（见方式二 / 方式三）。
+   - 插件的 bundle 会自动在 profile 组合中注册 `tool-wps` 行（`cordis.patch.yml` 内置 `insert`），**无需再手动编辑** `bundles` 或 `cordis.patch.yml`。
+2. 提示你**重启 DSH**（写入 `~/.dsh` 系统目录的操作可能需要你在弹窗中批准）
 
-**方式二：包管理器安装**
+**注意两点：**
 
-```bash
-# Windows（用管理员 PowerShell 或使用 winget）
-winget install OpenJS.NodeJS.LTS
+- ⚠️ **重启必须由你手动完成**：DSH 智能体运行在 DSH 进程内部，无法自己重启宿主进程。按提示关掉终端里的 DSH 再重新运行 `dsh web`，然后回到对话说一声「重启好了」。
+- 重启后**第一次调用 WPS 工具**时，浏览器会自动弹出 WPS 登录页，登录新账号即完成授权。
 
-# macOS（Homebrew）
-brew install node
+### 方式二：命令行手动安装
 
-# Ubuntu / Debian
-sudo apt install nodejs npm
-
-# 使用 nvm 管理多个版本（macOS / Linux 推荐）
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-nvm install --lts
-nvm use --lts
-```
-
-**验证安装**
+不想用对话，也可以手动执行（与方式一的对话自动步骤等价）：
 
 ```bash
-node --version   # 应输出 v18.0.0 或更高，例如 v20.x / v22.x
-npm --version    # 应输出 v9.0.0 或更高
-```
+# 1. 安装插件包（三选一）
+dsh plugin --profile web add dsh-wps-plugin                                # 从 npm（已发布）
+dsh plugin --profile web add https://github.com/handsomeboyck/dsh-wps-plugings.git   # 从 Git
+dsh plugin --profile web add /path/to/dsh-wps-plugin                        # 本地路径 / link
 
-### 2. 安装 DeepSeek Harness (DSH)
-
-DSH 通过 npm 全局安装，安装后提供 `dsh` 命令。
-
-```bash
-npm install -g @deepseek-ai/dsh
-```
-
-> 若因权限不足报错（常见于 Linux / macOS），在命令前加 `sudo`：
-> ```bash
-> sudo npm install -g @deepseek-ai/dsh
-> ```
-
-**验证安装（必须通过再进行下一步）**
-
-```bash
-# 关闭当前终端，重新打开一个新终端窗口，然后执行：
-dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
-```
-
-> ⚠️ 如果报 `dsh 不是内部或外部命令`，说明 npm 全局目录不在 PATH 中。按以下步骤修复：
->
-> **Windows**：
-> 1. 先确认 npm 安装目录：在 cmd 中执行 `npm root -g`，记下输出的路径（通常是 `C:\Users\<你>\AppData\Roaming\npm`）
-> 2. 按 `Win + R` → 输入 `sysdm.cpl` → 回车
-> 3. 点「高级」→「环境变量」→ 在**用户变量**中找到 `Path`，双击编辑
-> 4. 点「新建」，粘贴上面记下的 npm 全局目录路径，确定保存
-> 5. **关闭所有终端窗口，重新打开**，再执行 `dsh --version`
->
-> **macOS / Linux**：
-> ```bash
-> # 将 npm 全局目录加入 PATH（写入 shell 配置文件，重启终端生效）
-> echo 'export PATH="$(npm root -g)/../bin:$PATH"' >> ~/.bashrc
-> source ~/.bashrc
-> ```
-
-安装完成后，DSH 会创建默认 profile 目录（`~/.dsh/profiles/<name>`），后续插件安装都在该目录下执行。
-
-### 3. 安装并启用插件
-
-插件是标准的 DSH bundle（`package.json` 声明 `dsh.bundle.patch` → `cordis.patch.yml`），
-`dsh plugin add` 会自动把它加入 profile 的 `dsh.profile.bundles`，无需再手动编辑补丁。
-
-**一键安装（Windows / macOS / Linux 通用）**
-
-```bash
-# Windows（下载 ZIP 后解压，例如到 C:\dsh-wps-plugin）
-dsh plugin --profile web add C:\dsh-wps-plugin
-
-# macOS / Linux
-dsh plugin --profile web add /path/to/dsh-wps-plugin
-```
-
-然后重启 DSH：
-
-```bash
+# 2. 重启 DSH
 dsh web
 ```
 
-> ⚠️ 如果你曾经按旧版文档手动在 `~/.dsh/profiles/web/cordis.patch.yml` 里添加过
-> `- id: tool-wps` 的覆盖块，请删除它（旧版写法会因 `name` 不匹配被跳过并打印告警）；
-> 现在插件的 `cordis.patch.yml` 已用正确的 `insert` 形式自动挂载，无需任何手动补丁。
+> 说明：`dsh plugin` 命令本质是「把参数转发给 profile 目录下的 pnpm」，并把声明了
+> `dsh.bundle` 的包自动写入 `dsh.profile.bundles`；插件自带的 `cordis.patch.yml` 会以
+> `insert` 形式自动注册 `tool-wps` 行。因此**无需手动编辑** `bundles` 或 `cordis.patch.yml`。
+
+### 方式三：本地源码安装（开发者）
+
+```bash
+git clone https://github.com/handsomeboyck/dsh-wps-plugings.git
+cd dsh-wps-plugings
+npm install
+npm run build          # 编译 src → dist
+
+# 以 link 方式接入 DSH
+dsh plugin --profile web add link:$PWD
+# 重启 dsh web 即可（bundle 自动注册 tool-wps 行）
+```
+
+---
+
+## 首次授权
+
+1. 重启 DSH 后，第一次调用任意 WPS 工具（例如「看看我最近的文件」）
+2. 浏览器自动打开 WPS 授权页（`mcp-center.wps.cn`）
+3. 登录你的 WPS 账号并授权
+4. 页面显示「授权成功」后即可关闭；Token 自动保存，之后无需重复授权
+
+> 授权轮询最长等待 **5 分钟**，请在该时间内完成登录。
+
+---
 
 ## 使用方式
 
-### 首次授权
+### 对话中使用（推荐）
 
-1. 安装插件后，首次调用 WPS 工具时会自动触发授权
-2. 浏览器会打开 WPS 登录页面
-3. 登录并点击「允许」完成授权
-4. Token 会自动保存到系统密钥链，后续使用无需重复授权
+装上之后，用自然语言即可，例如：
 
-### 调用示例
+| 你说的话 | 实际调用的工具 |
+| --- | --- |
+| 「看看我最近的文件」 | `list_latest_items` |
+| 「列出我的云文档根目录」 | `list_my_files` |
+| 「搜一下含『周报』的文件」 | `search_files` |
+| 「读一下这个文档」 | `read_file` |
+| 「新建一个 docx 文档，内容是……」 | `create_file_with_content` |
+| 「把这份周报上传到 WPS」 | `upload_file` / `create_file_with_content` |
+| 「看下这个文件的详情 / 下载链接」 | `get_file_info` / `download_file` |
+
+### 编程式调用（API）
 
 ```typescript
 import { initPlugin } from 'dsh-wps-plugin';
 
-// 初始化插件
 const plugin = await initPlugin();
 
 // 列出我的云文档根目录
-const files = await plugin.callTool('list_my_files', {
-  page_size: 10
-});
+const files = await plugin.callTool('list_my_files', { page_size: 10 });
 
 // 搜索文件
 const searchResult = await plugin.callTool('search_files', {
-  keyword: '报告',
+  keyword: '周报',
   file_type: 'file',
   page_size: 5
 });
 
-// 创建文档
+// 创建带内容的文档（root 目录 parent_id 为 "0"）
 const newDoc = await plugin.callTool('create_file_with_content', {
-  name: '我的文档.docx',
-  content: '文档内容',
-  file_extension: 'docx',
-  parent_id: '0'  // 根目录
+  name: '我的文档',
+  content: '# 标题\n\n正文内容',
+  file_extension: 'docx',   // 支持 .otl/.docx/.pdf/.xls/.xlsx/.ksheet/.dbt
+  parent_id: '0'
 });
 
 // 读取文档内容
@@ -159,14 +174,14 @@ const content = await plugin.callTool('read_file', {
 });
 ```
 
-## 支持的工具
+---
 
-插件注册 **56 个核心工具**，覆盖金山文档最常用的能力（工具清单由官方
-SkillHub MCP `tools/list` 生成，见 `src/core-tools.ts`，可用
-`node scripts/generate-core-tools.mjs` 重新生成）。按服务分组如下：
+## 内置工具一览
+
+插件默认向 DSH 注册以下 **56 个核心工具**（由官方 SkillHub MCP `tools/list` 生成，参数 schema 自动净化到 DSH 强制子集）：
 
 | 服务 | 数量 | 工具 |
-|------|------|------|
+| --- | --- | --- |
 | 文件/云盘 | 13 | `list_my_files` `list_files` `search_files` `get_file_info` `create_file_with_content` `create_folder` `upload_new_file` `download_file` `read_file` `move_file` `copy_file` `rename_file` `list_latest_items` |
 | 智能文档 otl | 6 | `otl.insert_content` `otl.convert` `otl.block_query` `otl.block_insert` `otl.block_update` `otl.block_delete` |
 | 分享/协作 | 5 | `share_file` `get_share_info` `set_collaborator_permissions` `list_document_collaborators` `create_document_comment` |
@@ -178,107 +193,93 @@ SkillHub MCP `tools/list` 生成，见 `src/core-tools.ts`，可用
 | 知识库 kwiki | 2 | `kwiki.list_knowledge_views` `kwiki.list_items` |
 | 版本历史 | 1 | `list_file_versions` |
 
-> 官方 SkillHub 端点共提供 **258 个工具**（含 `aippt` AI 生成 PPT、`pdf` 翻译、
-> `sheet` 图表/透视表、`dbsheet` 视图/表单/权限、`form` 等）。如需要扩展更多能力，
-> 把新工具名加入 `scripts/generate-core-tools.mjs` 的 `CORE_NAMES` 后重新生成并构建即可。
+> 官方 SkillHub 端点共提供 **258 个工具**（含 `aippt` AI 生成 PPT、`pdf` 翻译、`sheet` 图表/透视表、`dbsheet` 视图/表单/权限、`form` 等）。如需扩展更多能力，把新工具名加入 `scripts/generate-core-tools.mjs` 的 `CORE_NAMES`，再 `node scripts/generate-core-tools.mjs && npm run build` 重新生成并构建即可。
 
-## MCP Session 管理
+---
 
-插件实现了标准的 MCP Session 管理流程：
+## 认证与 Token 管理
 
-1. **初始化 Session** - 首次调用时自动创建 MCP Session
-2. **Session 复用** - 后续调用复用同一 Session
-3. **自动恢复** - Session 失效时自动重新创建
+### 存储位置
 
-```
-客户端 → initialize → 获取 Session ID → tools/call (携带 Session ID)
-```
+按优先级降级：
 
-## 配置
+1. **系统密钥链**（keytar）：
+   - Windows：凭据管理器，Target `dsh-wps/user-token`
+   - macOS：Keychain；Linux：Secret Service
+2. **文件**：`<DSH 工作目录>/.dsh-wps-cache/token.json`
+3. **内存**（进程重启后需重新授权）
 
-### MCP 端点配置
+### 切换账号 / 重新授权
 
-默认 MCP 端点：`https://mcp-center.wps.cn/skill_hub/mcp`
+换了 WPS 账号想重新认证时：
 
-如需修改，可在插件配置中设置：
-
-```yaml
-- id: tool-wps
-  config:
-    mcpEndpoint: https://your-custom-endpoint.com/mcp
+```cmd
+:: Windows：删除旧凭据
+cmdkey /delete:dsh-wps/user-token
 ```
 
-### 认证配置
+然后 **重启 DSH**，重启后第一次调用 WPS 工具会自动弹出浏览器，用新账号登录即可。
 
-插件使用 Bearer Token 认证，Token 会自动从 WPS OAuth 流程获取并存储在系统密钥链中。
+> 为什么不删也「不生效」？运行中的 DSH 进程会在内存里缓存旧 Token，仅删除凭据不够，必须重启进程清空缓存——这是切换账号的标准步骤。
+
+### 自动处理
+
+- Token 过期（或 API 返回 401/403）：自动清除并重新拉起浏览器授权
+- MCP Session 失效（`Invalid session ID`）：自动重建，无需人工干预
+
+---
+
+## 故障排除
+
+| 症状 | 原因 | 解决 |
+| --- | --- | --- |
+| 浏览器没弹出 / 授权超时 | 未登录或网络问题 | 确认能访问 `mcp-center.wps.cn`，重新触发一次工具调用 |
+| 调工具返回 401/403 | Token 失效 | 插件会自动重授权；仍失败则删除凭据 + 重启 DSH |
+| 显示的还是旧账号数据 | 进程内存缓存旧 Token | 删除凭据（`cmdkey /delete:dsh-wps/user-token`）并**重启 DSH** |
+| 插件没生效（没有 WPS 工具） | 插件未安装或未重启 | 确认 `dsh plugin --profile web add dsh-wps-plugin` 已执行，并**重启 `dsh web`** |
+| `dsh` 命令找不到 | npm 全局目录不在 PATH | 将 `npm root -g` 目录加入 PATH 后重开终端 |
+
+---
 
 ## 开发
 
 ```bash
-# 安装依赖
-npm install
-
-# 构建
-npm run build
-
-# 开发模式（监听文件变化）
-npm run dev
+npm install        # 安装依赖
+npm run build      # 构建（tsc：src → dist）
+npm run dev        # 监听模式开发
 ```
 
-## 认证流程
+目录结构：
 
 ```
-用户 → 浏览器授权 → 获取 Token → 存储到文件/密钥链 → API 调用携带 Token
+dsh-wps-plugin/
+├── src/
+│   ├── auth/          # 浏览器 OAuth 授权 + Token 存储
+│   ├── tools/         # MCP API 客户端与工具定义
+│   ├── core-tools.ts  # 56 个核心工具定义（官方 tools/list 生成）
+│   ├── client.ts      # 编程式客户端（initPlugin / refreshToken）
+│   ├── index.ts
+│   └── plugin.ts      # Cordis 插件入口（apply / Config）
+├── scripts/           # 工具定义生成器 + 官方 tools/list 快照
+├── cordis.patch.yml   # bundle patch 层（insert 注册 tool-wps 行）
+├── dist/              # 构建产物
+└── package.json       # dsh.bundle.patch 声明
 ```
 
-### Token 缓存
-
-插件支持 Token 持久化存储，无需每次启动都重新授权：
-
-- **存储位置**：`<工作目录>/.dsh-wps-cache/token.json`
-- **存储模式**：优先使用系统密钥链，降级到文件存储
-- **过期处理**：Token 过期后自动清除，需要重新授权
-
-```
-首次启动 → 浏览器授权 → Token 保存到文件
-再次启动 → 自动从文件加载 Token → 直接使用
-Token 过期 → 自动清除 → 重新授权
-```
-
-## 故障排除
-
-### 问题 1：授权失败
-
-**症状**：浏览器打开后无法完成授权
-
-**解决方案**：
-1. 确保浏览器可以访问 `mcp-center.wps.cn`
-2. 检查网络连接
-3. 尝试清除浏览器缓存后重试
-
-### 问题 2：Token 过期
-
-**症状**：调用工具返回 401 错误
-
-**解决方案**：插件会自动处理 Token 刷新，如果失败可以手动触发：
-
-```typescript
-await plugin.refreshToken();
-```
-
-### 问题 3：Session 失效
-
-**症状**：调用工具返回 "Invalid session ID"
-
-**解决方案**：插件会自动重新创建 Session，无需手动处理。
+---
 
 ## 相关链接
 
-- [金山文档 SkillHub](https://mcp-center.wps.cn)
-- [DeepSeek Harness](https://github.com/deepseek-ai/dsh)
+- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
+- [金山文档 SkillHub / MCP 中心](https://mcp-center.wps.cn)
 - [WPS 开放平台](https://open.wps.cn)
-- [在线文档](https://www.kdocs.cn/l/cePMmBYLR35z)
+- [本仓库](https://github.com/handsomeboyck/dsh-wps-plugings)
 
-## License
+## License（双许可）
 
-MIT
+本软件采用**双许可（Dual Licensing）**模式：
+
+- **开源许可（默认）**：[AGPL-3.0-only](https://www.gnu.org/licenses/agpl-3.0.html)，完整条款见 [`LICENSE`](./LICENSE)。可免费使用、修改、分发，但衍生作品必须开源，SaaS 场景须公开源码。
+- **商业授权**：如需在闭源商业产品中集成/销售，或以 SaaS 形式提供而不履行 AGPL 义务，必须事先获得作者书面商业授权，详见 [`COMMERCIAL-LICENSE.md`](./COMMERCIAL-LICENSE.md)（联系邮箱：839567748@qq.com）。
+
+> 未经商业授权，不得闭源商用。

@@ -5,7 +5,7 @@
 
 // 重新导出 cordis 插件
 export { apply, name, inject, Config, coreTools, executeWpsTool } from './plugin.js';
-export type { CoreToolDefinition } from './plugin.js';
+export type { CoreToolDefinition } from './core-tools.js';
 
 // 重新导出认证模块
 export { ensureAuthenticated, authorize } from './auth/browser-auth.js';
@@ -20,4 +20,4 @@ export { apiClient, toolRegistry } from './tools/api-client.js';
 export type { ApiClientConfig, ToolDefinition } from './tools/api-client.js';
 
 // 插件版本
-export const PLUGIN_VERSION = '0.1.0';
+export const PLUGIN_VERSION = '0.2.0';

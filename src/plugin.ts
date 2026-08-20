@@ -3,18 +3,30 @@
  * 将 WPS 核心工具集注册到 DSH。
  *
  * 本插件以「原生 cordis bundle」方式加载（`dsh plugin add` → pnpm →
- * `dsh.profile.bundles` → loader `import(name)`），拥有完整 Node 权限，
- * 因此使用 `@deepseek-ai/dsh-tools` 的注册契约：`ctx.tools.register` 要求
- * 每个工具声明 `output`（规范输出）并返回无损 JSON。
+ * `dsh.profile.bundles` → loader `import(name)`），拥有完整 Node 权限。
+ * 使用 DSH 工具契约：`ctx.tools.register` 要求声明 `output`（规范输出），
+ * 且 `output.render` 必须返回内容块数组 `[{ type: 'text', text }]`。
  */
 
+import z from '@deepseek-ai/schemastery';
 import { tokenStore } from './auth/token-store.js';
 import { apiClient } from './tools/api-client.js';
-import { coreTools, type CoreToolDefinition } from './core-tools.js';
+import { coreTools } from './core-tools.js';
 
 // WPS API 配置
-const AUTH_GUIDE_URL = 'https://mcp-center.wps.cn/kdocs-auth/auth-guide';
 const EXCHANGE_URL = 'https://api.wps.cn/office/v5/ai/skill_hub/wps_auth/exchange';
+const AUTH_GUIDE_URL = 'https://mcp-center.wps.cn/kdocs-auth/auth-guide';
+
+/**
+ * 调用 WPS MCP API（使用 API 客户端）
+ */
+async function callWpsApi(tool: string, params: Record<string, any>): Promise<any> {
+  // 确保 API 客户端已初始化
+  if (!(apiClient as any).initialized) {
+    await apiClient.initialize();
+  }
+  return apiClient.callTool(tool, params);
+}
 
 /**
  * 获取或触发 WPS 授权
@@ -41,71 +53,67 @@ async function getWpsToken(): Promise<string> {
 }
 
 /**
- * 调用 WPS MCP API（使用新的 API 客户端）
+ * 解析 WPS MCP 响应
+ * WPS MCP 服务将业务结果包裹在 JSON-RPC envelope 中：
+ * { jsonrpc, id, result: { content: [{ type: 'text', text: '{"code":0,"message":"成功","data":{...}}' }] } }
+ * 需要解出内层 JSON，并把协议层/业务层错误转成异常。
  */
-async function callWpsApi(tool: string, params: Record<string, any>): Promise<any> {
-  // 确保 API 客户端已初始化
-  if (!(apiClient as any).initialized) {
-    await apiClient.initialize();
+function parseWpsResponse(toolName: string, response: any): any {
+  // 1. JSON-RPC 协议层错误
+  if (response && typeof response === 'object' && response.error) {
+    const message = response.error.message || JSON.stringify(response.error);
+    throw new Error(`WPS 工具 ${toolName} 调用失败: ${message}`);
   }
-  return apiClient.callTool(tool, params);
-}
 
-/**
- * 从 WPS MCP 响应中提取对模型有用的结果。
- *
- * 兼容两种信封：
- * - 标准 MCP tools/call：{ result: { content: [{ type: 'text', text }], isError } }
- * - WPS 自定义信封：{ code, message, data, result, detail }
- */
-function extractWpsResult(data: any): any {
-  if (data && typeof data === 'object') {
-    const r = data.result;
-    if (r && typeof r === 'object' && Array.isArray(r.content)) {
-      const texts = r.content
-        .filter((c: any) => c && c.type === 'text' && typeof c.text === 'string')
-        .map((c: any) => c.text);
-      if (texts.length > 0) {
-        return texts.join('\n');
-      }
-      return r.content;
-    }
-    if (r !== undefined) {
-      return r;
-    }
+  // 2. 提取 content 文本块
+  const content = response?.result?.content;
+  if (!Array.isArray(content) || content.length === 0) {
+    throw new Error(`WPS 工具 ${toolName} 返回了无法识别的响应: ${String(JSON.stringify(response)).substring(0, 300)}`);
   }
-  return data;
+  const text = content
+    .filter((block: any) => block?.type === 'text')
+    .map((block: any) => String(block.text ?? ''))
+    .join('\n');
+
+  // 3. 解析内层业务 JSON
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === 'object' && typeof parsed.code === 'number' && parsed.code !== 0) {
+      throw new Error(`WPS 工具 ${toolName} 调用失败 (code=${parsed.code}): ${parsed.message || '未知错误'}`);
+    }
+    return parsed;
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith(`WPS 工具 ${toolName} 调用失败`)) {
+      throw error;
+    }
+    // text 不是 JSON，直接返回文本
+    return { text };
+  }
 }
 
 /**
- * 渲染工具结果为模型可见的文本块。
- */
-function renderWpsResult(_args: unknown, value: unknown): Array<{ type: string; text: string }> {
-  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
-  return [{ type: 'text', text }];
-}
-
-/**
- * 执行 WPS 工具：先确保有 token，再调用 MCP 并提取结果。
+ * 执行 WPS 工具：先确保有 token，再调用 MCP 并解析结果。
  */
 async function executeWpsTool(toolName: string, args: Record<string, any>): Promise<any> {
   await getWpsToken();
-  const raw = await callWpsApi(toolName, args);
-  return extractWpsResult(raw);
+  const response = await callWpsApi(toolName, args);
+  return parseWpsResponse(toolName, response);
 }
 
 /**
  * WPS 插件配置
+ * 注：Cordis 要求 Config 为标准 schema（schemastery），不能是普通默认值对象。
  */
-const Config = {
-  enabled: true,
-  timeoutMs: 30000
-};
+const Config = z.object({
+  enabled: z.boolean().default(true),
+  timeoutMs: z.number().default(30000)
+});
 
 /**
  * WPS 插件注入的服务
+ * 注：当前 DSH 无 systemPrompt 服务，仅注入 tools。
  */
-const inject = ['tools', 'systemPrompt'];
+const inject = ['tools'];
 
 /**
  * 插件名称
@@ -116,13 +124,6 @@ const name = 'tool-wps';
  * WPS 插件主函数
  */
 function apply(ctx: any, config: any = Config) {
-  // 添加系统提示
-  ctx.systemPrompt.section({
-    name: 'tool:wps',
-    order: 120,
-    text: 'Use the WPS (Kingsoft Office) tools to work with cloud files, documents (wps.*), spreadsheets (sheet.*), presentations (wpp.*), PDFs (pdf.*), smart tables (dbsheet.*), smart docs (otl.*), and knowledge bases (kwiki.*), plus top-level file/share/version tools. Tools read/write the user\'s Kingsoft Docs cloud drive; the first use triggers a browser login to authorize Kingsoft Docs.'
-  });
-
   // 注册核心工具集
   for (const def of coreTools) {
     ctx.tools.register({
@@ -130,10 +131,14 @@ function apply(ctx: any, config: any = Config) {
       description: def.description,
       parameters: def.parameters,
       output: {
-        // 注解-only schema：接受任意无损 JSON 值
+        // WPS 各工具返回的数据形态不同，不做结构约束
         schema: {},
-        render: renderWpsResult
+        render: (_args: any, value: any) => [{
+          type: 'text',
+          text: typeof value === 'string' ? value : JSON.stringify(value, null, 2)
+        }]
       },
+      timeoutMs: config.timeoutMs,
       async execute(args: Record<string, any>) {
         return executeWpsTool(def.name, args);
       }
@@ -144,4 +149,3 @@ function apply(ctx: any, config: any = Config) {
 }
 
 export { apply, name, inject, Config, coreTools, executeWpsTool };
-export type { CoreToolDefinition };
