@@ -1,27 +1,20 @@
 /**
  * DSH WPS Cordis Plugin
- * 注册 WPS 工具到 DSH
+ * 将 WPS 核心工具集注册到 DSH。
+ *
+ * 本插件以「原生 cordis bundle」方式加载（`dsh plugin add` → pnpm →
+ * `dsh.profile.bundles` → loader `import(name)`），拥有完整 Node 权限，
+ * 因此使用 `@deepseek-ai/dsh-tools` 的注册契约：`ctx.tools.register` 要求
+ * 每个工具声明 `output`（规范输出）并返回无损 JSON。
  */
 
-import { ensureAuthenticated } from './auth/browser-auth.js';
 import { tokenStore } from './auth/token-store.js';
 import { apiClient } from './tools/api-client.js';
+import { coreTools, type CoreToolDefinition } from './core-tools.js';
 
 // WPS API 配置
-const EXCHANGE_URL = 'https://api.wps.cn/office/v5/ai/skill_hub/wps_auth/exchange';
 const AUTH_GUIDE_URL = 'https://mcp-center.wps.cn/kdocs-auth/auth-guide';
-
-/**
- * 调用 WPS MCP API（使用新的 API 客户端）
- */
-async function callWpsApi(tool: string, params: Record<string, any>): Promise<any> {
-  // 确保 API 客户端已初始化
-  if (!(apiClient as any).initialized) {
-    await apiClient.initialize();
-  }
-  // MCP 工具名称已经是正确的格式
-  return apiClient.callTool(tool, params);
-}
+const EXCHANGE_URL = 'https://api.wps.cn/office/v5/ai/skill_hub/wps_auth/exchange';
 
 /**
  * 获取或触发 WPS 授权
@@ -48,238 +41,57 @@ async function getWpsToken(): Promise<string> {
 }
 
 /**
- * WPS 工具定义
- * 使用 MCP 协议的工具
+ * 调用 WPS MCP API（使用新的 API 客户端）
  */
-const wpsToolDefinitions = [
-  {
-    name: 'get_file_info',
-    description: '获取文件详情。获取指定文件的详细信息。',
-    parameters: {
-      type: 'object',
-      properties: {
-        file_id: {
-          type: 'string',
-          description: '文件 ID'
-        },
-        link_id: {
-          type: 'string',
-          description: '分享链接 ID'
-        },
-        url: {
-          type: 'string',
-          description: '文件 URL'
-        },
-        with_drive: {
-          type: 'boolean',
-          description: '是否包含 drive_id 信息',
-          default: true
-        }
-      },
-      required: []
-    }
-  },
-  {
-    name: 'search_files',
-    description: '搜索文件。根据关键词搜索文件。',
-    parameters: {
-      type: 'object',
-      properties: {
-        keyword: {
-          type: 'string',
-          description: '搜索关键词'
-        },
-        file_type: {
-          type: 'string',
-          description: '文件类型过滤：file（文件）、folder（文件夹）'
-        },
-        page_size: {
-          type: 'number',
-          description: '每页数量，默认 10'
-        }
-      },
-      required: ['keyword']
-    }
-  },
-  {
-    name: 'list_files',
-    description: '列出文件夹内容。获取指定文件夹下的文件列表。',
-    parameters: {
-      type: 'object',
-      properties: {
-        parent_id: {
-          type: 'string',
-          description: '文件夹 ID'
-        },
-        drive_id: {
-          type: 'string',
-          description: '云盘 ID'
-        },
-        page_size: {
-          type: 'number',
-          description: '每页数量，默认 20'
-        }
-      },
-      required: []
-    }
-  },
-  {
-    name: 'list_my_files',
-    description: '列出我的云文档根目录。',
-    parameters: {
-      type: 'object',
-      properties: {
-        page_size: {
-          type: 'number',
-          description: '每页数量，默认 20'
-        }
-      },
-      required: []
-    }
-  },
-  {
-    name: 'create_file',
-    description: '创建文件或文件夹。',
-    parameters: {
-      type: 'object',
-      properties: {
-        name: {
-          type: 'string',
-          description: '文件名称'
-        },
-        file_type: {
-          type: 'string',
-          description: '文件类型：file（文件）、folder（文件夹）'
-        },
-        parent_id: {
-          type: 'string',
-          description: '父文件夹 ID'
-        },
-        drive_id: {
-          type: 'string',
-          description: '云盘 ID（可选）'
-        }
-      },
-      required: ['name', 'file_type']
-    }
-  },
-  {
-    name: 'create_file_with_content',
-    description: '创建带内容的文件。创建文件并写入内容。',
-    parameters: {
-      type: 'object',
-      properties: {
-        name: {
-          type: 'string',
-          description: '文件名称'
-        },
-        content: {
-          type: 'string',
-          description: '文件内容（Markdown 格式）'
-        },
-        file_extension: {
-          type: 'string',
-          description: '文件扩展名：md, txt, docx, xlsx 等'
-        },
-        parent_id: {
-          type: 'string',
-          description: '父文件夹 ID'
-        },
-        drive_id: {
-          type: 'string',
-          description: '云盘 ID（可选）'
-        }
-      },
-      required: ['name']
-    }
-  },
-  {
-    name: 'read_file',
-    description: '读取文件内容。获取文档中的文字内容。',
-    parameters: {
-      type: 'object',
-      properties: {
-        file_id: {
-          type: 'string',
-          description: '文件 ID'
-        },
-        link_id: {
-          type: 'string',
-          description: '分享链接 ID'
-        },
-        url: {
-          type: 'string',
-          description: '文件 URL'
-        },
-        format: {
-          type: 'string',
-          description: '输出格式：markdown（默认）、text'
-        }
-      },
-      required: []
-    }
-  },
-  {
-    name: 'download_file',
-    description: '下载文件。获取文件的下载链接。',
-    parameters: {
-      type: 'object',
-      properties: {
-        file_id: {
-          type: 'string',
-          description: '文件 ID'
-        },
-        drive_id: {
-          type: 'string',
-          description: '云盘 ID'
-        },
-        link_id: {
-          type: 'string',
-          description: '分享链接 ID'
-        }
-      },
-      required: []
-    }
-  },
-  {
-    name: 'upload_file',
-    description: '上传文件到云盘。',
-    parameters: {
-      type: 'object',
-      properties: {
-        name: {
-          type: 'string',
-          description: '文件名称'
-        },
-        content_base64: {
-          type: 'string',
-          description: '文件内容（Base64 编码）'
-        },
-        content_format: {
-          type: 'string',
-          description: '文件格式'
-        },
-        parent_id: {
-          type: 'string',
-          description: '父文件夹 ID'
-        },
-        drive_id: {
-          type: 'string',
-          description: '云盘 ID（可选）'
-        }
-      },
-      required: ['name']
-    }
+async function callWpsApi(tool: string, params: Record<string, any>): Promise<any> {
+  // 确保 API 客户端已初始化
+  if (!(apiClient as any).initialized) {
+    await apiClient.initialize();
   }
-];
+  return apiClient.callTool(tool, params);
+}
 
 /**
- * 执行 WPS 工具
+ * 从 WPS MCP 响应中提取对模型有用的结果。
+ *
+ * 兼容两种信封：
+ * - 标准 MCP tools/call：{ result: { content: [{ type: 'text', text }], isError } }
+ * - WPS 自定义信封：{ code, message, data, result, detail }
+ */
+function extractWpsResult(data: any): any {
+  if (data && typeof data === 'object') {
+    const r = data.result;
+    if (r && typeof r === 'object' && Array.isArray(r.content)) {
+      const texts = r.content
+        .filter((c: any) => c && c.type === 'text' && typeof c.text === 'string')
+        .map((c: any) => c.text);
+      if (texts.length > 0) {
+        return texts.join('\n');
+      }
+      return r.content;
+    }
+    if (r !== undefined) {
+      return r;
+    }
+  }
+  return data;
+}
+
+/**
+ * 渲染工具结果为模型可见的文本块。
+ */
+function renderWpsResult(_args: unknown, value: unknown): Array<{ type: string; text: string }> {
+  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  return [{ type: 'text', text }];
+}
+
+/**
+ * 执行 WPS 工具：先确保有 token，再调用 MCP 并提取结果。
  */
 async function executeWpsTool(toolName: string, args: Record<string, any>): Promise<any> {
-  // 先确保有 token
   await getWpsToken();
-  return callWpsApi(toolName, args);
+  const raw = await callWpsApi(toolName, args);
+  return extractWpsResult(raw);
 }
 
 /**
@@ -308,18 +120,28 @@ function apply(ctx: any, config: any = Config) {
   ctx.systemPrompt.section({
     name: 'tool:wps',
     order: 120,
-    text: 'Use the WPS tools (sheet.*, wps.*, drive.*) to interact with Kingsoft Office documents, spreadsheets, and cloud storage. These tools require authentication - the first use will trigger a browser login flow.'
+    text: 'Use the WPS (Kingsoft Office) tools to work with cloud files, documents (wps.*), spreadsheets (sheet.*), presentations (wpp.*), PDFs (pdf.*), smart tables (dbsheet.*), smart docs (otl.*), and knowledge bases (kwiki.*), plus top-level file/share/version tools. Tools read/write the user\'s Kingsoft Docs cloud drive; the first use triggers a browser login to authorize Kingsoft Docs.'
   });
 
-  // 注册所有 WPS 工具
-  for (const toolDef of wpsToolDefinitions) {
+  // 注册核心工具集
+  for (const def of coreTools) {
     ctx.tools.register({
-      ...toolDef,
+      name: def.name,
+      description: def.description,
+      parameters: def.parameters,
+      output: {
+        // 注解-only schema：接受任意无损 JSON 值
+        schema: {},
+        render: renderWpsResult
+      },
       async execute(args: Record<string, any>) {
-        return executeWpsTool(toolDef.name, args);
+        return executeWpsTool(def.name, args);
       }
     });
   }
+
+  console.log(`[WPS Plugin] 已注册 ${coreTools.length} 个核心工具`);
 }
 
-export { apply, name, inject, Config, wpsToolDefinitions, executeWpsTool };
+export { apply, name, inject, Config, coreTools, executeWpsTool };
+export type { CoreToolDefinition };

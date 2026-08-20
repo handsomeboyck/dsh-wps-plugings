@@ -4,7 +4,8 @@
  */
 
 // 重新导出 cordis 插件
-export { apply, name, inject, Config, wpsToolDefinitions, executeWpsTool } from './plugin.js';
+export { apply, name, inject, Config, coreTools, executeWpsTool } from './plugin.js';
+export type { CoreToolDefinition } from './plugin.js';
 
 // 重新导出认证模块
 export { ensureAuthenticated, authorize } from './auth/browser-auth.js';

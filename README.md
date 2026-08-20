@@ -92,38 +92,28 @@ dsh --version      # 应输出 dsh 版本号，例如 0.1.0-rc.7
 
 ### 3. 安装并启用插件
 
-**Windows 一键安装（最简单）**
+插件是标准的 DSH bundle（`package.json` 声明 `dsh.bundle.patch` → `cordis.patch.yml`），
+`dsh plugin add` 会自动把它加入 profile 的 `dsh.profile.bundles`，无需再手动编辑补丁。
 
-1. 打开 https://github.com/handsomeboyck/dsh-wps-plugings，点绿色「Code」→「Download ZIP」
-2. 解压到 `C:\dsh-wps-plugin`
-3. 在 cmd 中执行以下两条命令：
+**一键安装（Windows / macOS / Linux 通用）**
 
-```cmd
+```bash
+# Windows（下载 ZIP 后解压，例如到 C:\dsh-wps-plugin）
 dsh plugin --profile web add C:\dsh-wps-plugin
-powershell -Command "(Get-Content $env:USERPROFILE\.dsh\profiles\web\cordis.patch.yml) -replace '^\[\]$', '- id: tool-wps' + [char]10 + '  name: WPS 工具集' + [char]10 + '  disabled: false' + [char]10 + '  config:' + [char]10 + '    tool-wps:' + [char]10 + '      enabled: true' + [char]10 + '      timeoutMs: 30000' | Set-Content $env:USERPROFILE\.dsh\profiles\web\cordis.patch.yml"
+
+# macOS / Linux
+dsh plugin --profile web add /path/to/dsh-wps-plugin
 ```
 
 然后重启 DSH：
 
-```cmd
-dsh web
-```
-
-**Linux / macOS 一键安装**
-
 ```bash
-dsh plugin --profile web add /path/to/dsh-wps-plugin
-cat > ~/.dsh/profiles/web/cordis.patch.yml << 'EOF'
-- id: tool-wps
-  name: WPS 工具集
-  disabled: false
-  config:
-    tool-wps:
-      enabled: true
-      timeoutMs: 30000
-EOF
 dsh web
 ```
+
+> ⚠️ 如果你曾经按旧版文档手动在 `~/.dsh/profiles/web/cordis.patch.yml` 里添加过
+> `- id: tool-wps` 的覆盖块，请删除它（旧版写法会因 `name` 不匹配被跳过并打印告警）；
+> 现在插件的 `cordis.patch.yml` 已用正确的 `insert` 形式自动挂载，无需任何手动补丁。
 
 ## 使用方式
 
@@ -171,46 +161,26 @@ const content = await plugin.callTool('read_file', {
 
 ## 支持的工具
 
-### 文件操作工具
+插件注册 **56 个核心工具**，覆盖金山文档最常用的能力（工具清单由官方
+SkillHub MCP `tools/list` 生成，见 `src/core-tools.ts`，可用
+`node scripts/generate-core-tools.mjs` 重新生成）。按服务分组如下：
 
-| 工具名称 | 功能说明 | 必需参数 |
-|---------|---------|---------|
-| `get_file_info` | 获取文件详情 | file_id 或 link_id 或 url |
-| `search_files` | 搜索文件 | keyword |
-| `list_files` | 列出文件夹内容 | parent_id |
-| `list_my_files` | 列出我的云文档根目录 | 无 |
-| `create_file` | 创建文件或文件夹 | name, file_type |
-| `create_file_with_content` | 创建带内容的文件 | name |
-| `read_file` | 读取文件内容 | file_id 或 link_id 或 url |
-| `download_file` | 下载文件 | file_id 和 drive_id |
-| `upload_file` | 上传文件 | name |
+| 服务 | 数量 | 工具 |
+|------|------|------|
+| 文件/云盘 | 13 | `list_my_files` `list_files` `search_files` `get_file_info` `create_file_with_content` `create_folder` `upload_new_file` `download_file` `read_file` `move_file` `copy_file` `rename_file` `list_latest_items` |
+| 智能文档 otl | 6 | `otl.insert_content` `otl.convert` `otl.block_query` `otl.block_insert` `otl.block_update` `otl.block_delete` |
+| 分享/协作 | 5 | `share_file` `get_share_info` `set_collaborator_permissions` `list_document_collaborators` `create_document_comment` |
+| 文字 wps | 7 | `wps.create_empty_document` `wps.read_text` `wps.write_text` `wps.read_table` `wps.write_table` `wps.search_replace` `wps.export` |
+| 表格 sheet | 10 | `sheet.get_sheets_info` `sheet.get_range_data` `sheet.update_range_data` `sheet.range_data_batch_update` `sheet.add_sheet` `sheet.delete_sheets` `sheet.find_range_data` `sheet.delete_range_data` `sheet.insert_rows_cols` `sheet.merge_range` |
+| 演示 wpp | 4 | `wpp.create_empty_presentation` `wpp.read_slide` `wpp.write_slide` `wpp.export_pdf` |
+| PDF | 4 | `pdf.get_pdf_page_count` `pdf.extract_pdf_pages` `pdf.convert` `pdf.convert_query` |
+| 多维表 dbsheet | 4 | `dbsheet.get_schema` `dbsheet.list_records` `dbsheet.create_records` `dbsheet.update_records` |
+| 知识库 kwiki | 2 | `kwiki.list_knowledge_views` `kwiki.list_items` |
+| 版本历史 | 1 | `list_file_versions` |
 
-### 表格工具 (sheet)
-
-| 工具名称 | 功能说明 |
-|---------|---------|
-| `sheet.add_row` | 添加行 |
-| `sheet.add_sheet` | 添加工作表 |
-| `sheet.create_conditional_format_rules` | 创建条件格式 |
-| `sheet.create_data_validations` | 创建数据验证 |
-| `sheet.add_chart` | 添加图表 |
-
-### 文档工具 (wps)
-
-| 工具名称 | 功能说明 |
-|---------|---------|
-| `wps.create_empty_document` | 创建空白文档 |
-| `wps.read_content_control` | 读取内容控件 |
-| `wps.search_replace` | 搜索替换 |
-| `wps.export` | 导出文档 |
-
-### 演示文稿工具 (wpp)
-
-| 工具名称 | 功能说明 |
-|---------|---------|
-| `wpp.create_empty_presentation` | 创建空白演示文稿 |
-| `wpp.read_presentation` | 读取演示文稿 |
-| `wpp.insert_slide` | 插入幻灯片 |
+> 官方 SkillHub 端点共提供 **258 个工具**（含 `aippt` AI 生成 PPT、`pdf` 翻译、
+> `sheet` 图表/透视表、`dbsheet` 视图/表单/权限、`form` 等）。如需要扩展更多能力，
+> 把新工具名加入 `scripts/generate-core-tools.mjs` 的 `CORE_NAMES` 后重新生成并构建即可。
 
 ## MCP Session 管理
 
