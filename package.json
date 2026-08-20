@@ -1,6 +1,6 @@
 {
   "name": "dsh-wps-plugin",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "DeepSeek Harness 插件 - 金山文档 WPS 能力集成",
   "type": "module",
   "main": "dist/index.js",

@@ -125,13 +125,18 @@ const name = 'tool-wps';
  */
 function apply(ctx: any, config: any = Config) {
   // 注册核心工具集
+  // DeepSeek 模型要求工具名匹配 ^[a-zA-Z0-9_-]+$，不允许点号。
+  // 注册时将点号替换为下划线（otl.insert_content → otl_insert_content），
+  // 调用 MCP 时还原回原始点号名。
   for (const def of coreTools) {
+    const mcpName = def.name; // 原始 MCP 工具名（含点号）
+    const dshName = mcpName.replace(/\./g, '_'); // DSH 注册名（下划线）
+
     ctx.tools.register({
-      name: def.name,
+      name: dshName,
       description: def.description,
       parameters: def.parameters,
       output: {
-        // WPS 各工具返回的数据形态不同，不做结构约束
         schema: {},
         render: (_args: any, value: any) => [{
           type: 'text',
@@ -140,7 +145,7 @@ function apply(ctx: any, config: any = Config) {
       },
       timeoutMs: config.timeoutMs,
       async execute(args: Record<string, any>) {
-        return executeWpsTool(def.name, args);
+        return executeWpsTool(mcpName, args); // 用原始点号名调用 MCP
       }
     });
   }
