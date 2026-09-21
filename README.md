@@ -1,9 +1,11 @@
+
+
 # DSH WPS Plugin
 
 > DeepSeek Harness（DSH）金山文档 / WPS 能力集成插件。
 > 装上之后，你可以直接在 **DeepSeek Harness 对话里**用自然语言操作 WPS 云文档：列文件、读文档、创建/上传文档、搜索文件等。
 
-[![npm](https://img.shields.io/badge/dsh--wps--plugin-0.2.0-blue)](https://github.com/handsomeboyck/dsh-wps-plugings)
+[![npm](https://img.shields.io/badge/dsh--wps--plugin-0.2.1-blue)](https://github.com/handsomeboyck/dsh-wps-plugings)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--Commercial-blue)](./LICENSE)
 
 ---
@@ -186,7 +188,7 @@ const content = await plugin.callTool('read_file', {
 | 智能文档 otl | 6 | `otl.insert_content` `otl.convert` `otl.block_query` `otl.block_insert` `otl.block_update` `otl.block_delete` |
 | 分享/协作 | 5 | `share_file` `get_share_info` `set_collaborator_permissions` `list_document_collaborators` `create_document_comment` |
 | 文字 wps | 7 | `wps.create_empty_document` `wps.read_text` `wps.write_text` `wps.read_table` `wps.write_table` `wps.search_replace` `wps.export` |
-| 表格 sheet | 10 | `sheet.get_sheets_info` `sheet.get_range_data` `sheet.update_range_data` `sheet.range_data_batch_update` `sheet.add_sheet` `sheet.delete_sheets` `sheet.find_range_data` `sheet.delete_range_data` `sheet.insert_rows_cols` `sheet.merge_range` |
+| 表格 sheet | 10 | `sheet.get_sheets_info` `sheet.get_sheets_info` `sheet.get_range_data` `sheet.update_range_data` `sheet.range_data_batch_update` `sheet.add_sheet` `sheet.delete_sheets` `sheet.find_range_data` `sheet.delete_range_data` `sheet.insert_rows_cols` `sheet.merge_range` |
 | 演示 wpp | 4 | `wpp.create_empty_presentation` `wpp.read_slide` `wpp.write_slide` `wpp.export_pdf` |
 | PDF | 4 | `pdf.get_pdf_page_count` `pdf.extract_pdf_pages` `pdf.convert` `pdf.convert_query` |
 | 多维表 dbsheet | 4 | `dbsheet.get_schema` `dbsheet.list_records` `dbsheet.create_records` `dbsheet.update_records` |
