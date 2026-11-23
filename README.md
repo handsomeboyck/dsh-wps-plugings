@@ -178,7 +178,7 @@ const content = await plugin.callTool('read_file', {
 
 ## 内置工具一览
 
-插件默认向 DSH 注册以下 **56 个核心工具**（由官方 SkillHub MCP `tools/list` 生成，参数 schema 自动净化到 DSH 强制子集）：
+插件默认向 DSH 注册以下 **77 个核心工具**（由官方 SkillHub MCP `tools/list` 生成，参数 schema 自动净化到 DSH 强制子集）：
 
 | 服务 | 数量 | 工具 |
 | --- | --- | --- |
@@ -186,14 +186,19 @@ const content = await plugin.callTool('read_file', {
 | 智能文档 otl | 6 | `otl.insert_content` `otl.convert` `otl.block_query` `otl.block_insert` `otl.block_update` `otl.block_delete` |
 | 分享/协作 | 5 | `share_file` `get_share_info` `set_collaborator_permissions` `list_document_collaborators` `create_document_comment` |
 | 文字 wps | 7 | `wps.create_empty_document` `wps.read_text` `wps.write_text` `wps.read_table` `wps.write_table` `wps.search_replace` `wps.export` |
-| 表格 sheet | 10 | `sheet.get_sheets_info` `sheet.get_range_data` `sheet.update_range_data` `sheet.range_data_batch_update` `sheet.add_sheet` `sheet.delete_sheets` `sheet.find_range_data` `sheet.delete_range_data` `sheet.insert_rows_cols` `sheet.merge_range` |
+| 表格 sheet | 18 | `sheet.get_sheets_info` `sheet.get_range_data` `sheet.update_range_data` `sheet.range_data_batch_update` `sheet.add_sheet` `sheet.delete_sheets` `sheet.find_range_data` `sheet.delete_range_data` `sheet.insert_rows_cols` `sheet.merge_range` `sheet.auto_fit` `sheet.freeze` `sheet.get_filters` `sheet.update_filters` `sheet.create_data_validations` `sheet.update_data_validations` `sheet.create_pivot_table` `sheet.add_chart` |
 | 演示 wpp | 4 | `wpp.create_empty_presentation` `wpp.read_slide` `wpp.write_slide` `wpp.export_pdf` |
 | PDF | 4 | `pdf.get_pdf_page_count` `pdf.extract_pdf_pages` `pdf.convert` `pdf.convert_query` |
-| 多维表 dbsheet | 4 | `dbsheet.get_schema` `dbsheet.list_records` `dbsheet.create_records` `dbsheet.update_records` |
+| 多维表 dbsheet | 15 | `dbsheet.get_schema` `dbsheet.list_records` `dbsheet.create_records` `dbsheet.update_records` `dbsheet.delete_records` `dbsheet.delete_fields` `dbsheet.delete_sheet` `dbsheet.delete_view` `dbsheet.create_fields` `dbsheet.update_fields` `dbsheet.views_list` `dbsheet.create_view` `dbsheet.update_view_setting` `dbsheet.get_record` `dbsheet.records_search` |
 | 知识库 kwiki | 2 | `kwiki.list_knowledge_views` `kwiki.list_items` |
 | 版本历史 | 1 | `list_file_versions` |
+| 回收站 | 2 | `list_deleted_files` `restore_deleted_file` |
+
+> ⚠️ **`scripts/skillhub-tools.json` 已合并刷新**：在线端点当前返回 238 个工具，但不再列出 `wps.*` / `wpp.*` 这 11 个（它们在另一个 skill 里）。为不丢能力，快照按「新端点优先、保留旧快照独有」合并为 301 个工具，再据此生成 `CORE_NAMES`。
 
 > 官方 SkillHub 端点共提供 **258 个工具**（含 `aippt` AI 生成 PPT、`pdf` 翻译、`sheet` 图表/透视表、`dbsheet` 视图/表单/权限、`form` 等）。如需扩展更多能力，把新工具名加入 `scripts/generate-core-tools.mjs` 的 `CORE_NAMES`，再 `node scripts/generate-core-tools.mjs && npm run build` 重新生成并构建即可。
+
+> ⚠️ **删除类工具不可恢复**：`dbsheet.delete_records` / `delete_fields` / `delete_sheet` / `delete_view` 会永久删除多维表格里的记录、字段（连同列数据）、整张数据表或视图，**没有回收站**。调用前应先用 `dbsheet.get_schema` + `dbsheet.list_records` 定位目标，并把要删除的对象回显给用户确认。
 
 ---
 
