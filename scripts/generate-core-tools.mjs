@@ -94,8 +94,21 @@ const CORE_NAMES = [
   // 多维表 dbsheet (4)
   "dbsheet.get_schema", "dbsheet.list_records", "dbsheet.create_records",
   "dbsheet.update_records",
+  // 多维表 dbsheet 删除类 (4) —— 不可恢复，描述里已标注需先定位再删
+  "dbsheet.delete_records", "dbsheet.delete_fields", "dbsheet.delete_sheet",
+  "dbsheet.delete_view",
   // 知识库 kwiki (2)
   "kwiki.list_knowledge_views", "kwiki.list_items",
+  // 表格增强：行高列宽自适应 / 冻结 / 筛选 / 数据校验 / 透视 / 图表 (8)
+  "sheet.auto_fit", "sheet.freeze", "sheet.get_filters", "sheet.update_filters",
+  "sheet.create_data_validations", "sheet.update_data_validations",
+  "sheet.create_pivot_table", "sheet.add_chart",
+  // 多维表增强：字段 / 视图 / 单条读取 (7)
+  "dbsheet.create_fields", "dbsheet.update_fields", "dbsheet.views_list",
+  "dbsheet.create_view", "dbsheet.update_view_setting", "dbsheet.get_record",
+  "dbsheet.records_search",
+  // 回收站 (2)
+  "list_deleted_files", "restore_deleted_file",
   // 版本历史 (1)
   "list_file_versions",
 ];

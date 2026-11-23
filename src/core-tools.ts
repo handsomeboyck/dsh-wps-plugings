@@ -64,12 +64,12 @@ export const coreTools: CoreToolDefinition[] = [
   },
   {
     "name": "list_files",
-    "description": "列出已知 drive_id 与 parent_id 的目录子项。不知道目录 ID 时：浏览个人云文档根目录用 list_my_files；按关键词找文件用 search_files。",
+    "description": "列出目录子项。已有文件夹 id 时列出该文件夹的子项；浏览个人云文档根目录用 list_my_files；按关键词找文件用 search_files。",
     "parameters": {
       "type": "object",
       "properties": {
         "drive_id": {
-          "description": "驱动盘 ID",
+          "description": "目标文件夹所在云盘 ID。parent_id 非 \"0\" 时可省略",
           "type": "string"
         },
         "filter_exts": {
@@ -103,7 +103,7 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "parent_id": {
-          "description": "文件夹 ID，根目录为 \"0\"",
+          "description": "文件夹 ID。两种情况：浏览某文件夹时传该文件夹 ID；浏览个人云文档根不要传 \"0\"，改用 list_my_files",
           "type": "string"
         },
         "with_ext_attrs": {
@@ -116,7 +116,6 @@ export const coreTools: CoreToolDefinition[] = [
         }
       },
       "required": [
-        "drive_id",
         "parent_id"
       ]
     }
@@ -325,12 +324,12 @@ export const coreTools: CoreToolDefinition[] = [
   },
   {
     "name": "create_file_with_content",
-    "description": "新建并写入内容：先看 name 后缀或 file_extension，再只传该后缀所需字段。\n- .otl/.docx → content（Markdown 明文 UTF-8）；缺省时创建空白文档（action=created_empty）\n- .pdf → 须传 content（Markdown 转档）；无 content 不降级，可改 upload_new_file\n- .xls/.xlsx/.ksheet → rangeData（单元格数据）\n- .dbt → records + fields\n不支持 .ppt/.pptx/.csv。只要空白文档也可用 create_empty_file。",
+    "description": "新建并写入内容：先看 name 后缀或 file_extension，再只传该后缀所需字段。\n- .otl/.docx → content（Markdown 明文 UTF-8）；缺省时创建空白文档（action=created_empty）\n- .md → 须传非空 content（原始 UTF-8 Markdown 文件）；无 content 不创建\n- .pdf → 须传 content（Markdown 转档）；无 content 不降级，可改 upload_new_file\n- .xls/.xlsx/.ksheet → rangeData（单元格数据）\n- .dbt → records + fields\n不支持 .ppt/.pptx/.csv。只要空白文档也可用 create_empty_file。",
     "parameters": {
       "type": "object",
       "properties": {
         "content": {
-          "description": "仅文本族必填（otl/docx/pdf）。Markdown 正文（UTF-8 明文，非 Base64）",
+          "description": "仅文本族必填（otl/docx/md/pdf）。Markdown 正文（UTF-8 明文，非 Base64）",
           "type": "string"
         },
         "drive_id": {
@@ -345,7 +344,7 @@ export const coreTools: CoreToolDefinition[] = [
           }
         },
         "file_extension": {
-          "description": "文档扩展名：otl/docx/pdf/xls/xlsx/ksheet/dbt",
+          "description": "文档扩展名：otl/docx/md/pdf/xls/xlsx/ksheet/dbt",
           "type": "string"
         },
         "name": {
@@ -388,7 +387,7 @@ export const coreTools: CoreToolDefinition[] = [
       "type": "object",
       "properties": {
         "drive_id": {
-          "description": "驱动盘 ID",
+          "description": "目标云盘 ID。不传则使用个人云盘",
           "type": "string"
         },
         "name": {
@@ -396,11 +395,16 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "on_name_conflict": {
-          "description": "fail / rename，默认 rename",
-          "type": "string"
+          "description": "fail / rename / reuse，默认 rename；reuse 会复用已有同名目录",
+          "type": "string",
+          "enum": [
+            "fail",
+            "rename",
+            "reuse"
+          ]
         },
         "parent_id": {
-          "description": "父文件夹 ID，根目录为 \"0\"",
+          "description": "父文件夹 ID，根目录为 \"0\"。\"0\" 是某个盘的根，不是个人盘根；不传则使用个人云盘根",
           "type": "string"
         },
         "parent_path": {
@@ -412,8 +416,6 @@ export const coreTools: CoreToolDefinition[] = [
         }
       },
       "required": [
-        "drive_id",
-        "parent_id",
         "name"
       ]
     }
@@ -429,7 +431,7 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "content_format": {
-          "description": "可选：源内容格式。支持 doc / docx / xls / xlsx / ppt / pptx / pdf / md / txt / html / zip / png / jpg / jpeg / csv / json / dps / et / wps / gif；其中 markdown 仅支持转为 docx / pdf 后上传",
+          "description": "可选：源内容格式。支持 doc / docx / xls / xlsx / ppt / pptx / pdf / md / txt / html / xml / zip / png / jpg / jpeg / csv / json / dps / et / wps / gif；其中 markdown 仅支持转为 docx / pdf 后上传",
           "type": "string",
           "enum": [
             "doc",
@@ -442,6 +444,7 @@ export const coreTools: CoreToolDefinition[] = [
             "md",
             "txt",
             "html",
+            "xml",
             "zip",
             "png",
             "jpg",
@@ -473,7 +476,7 @@ export const coreTools: CoreToolDefinition[] = [
           ]
         },
         "name": {
-          "description": "文件名，须带后缀，如 .docx / .md；支持 doc / docx / xls / xlsx / ppt / pptx / pdf / md / txt / html / zip / png / jpg / jpeg / csv / json / dps / et / wps / gif",
+          "description": "文件名，须带后缀，如 .docx / .md；支持 doc / docx / xls / xlsx / ppt / pptx / pdf / md / txt / html / xml / zip / png / jpg / jpeg / csv / json / dps / et / wps / gif",
           "type": "string"
         },
         "parent_id": {
@@ -496,12 +499,12 @@ export const coreTools: CoreToolDefinition[] = [
   },
   {
     "name": "download_file",
-    "description": "获取文件下载信息。",
+    "description": "获取文件下载信息。不支持在线文档类型（.otl / .dbt / .ksheet）的下载。仅支持二进制文件（.docx / .xlsx / .pdf / .pptx / .jpg / .png 等）。读取在线文档内容请使用 read_file。",
     "parameters": {
       "type": "object",
       "properties": {
         "drive_id": {
-          "description": "驱动盘 ID",
+          "description": "源文件所在云盘 ID。已传 url/link_id/file_id 时可省略",
           "type": "string"
         },
         "file_id": {
@@ -533,12 +536,12 @@ export const coreTools: CoreToolDefinition[] = [
   },
   {
     "name": "read_file",
-    "description": "读取云文档正文，按文件格式自动返回 Markdown 或结构化数据：url、link_id、file_id 至少填一个；多填时取 url > link_id > file_id。支持 docx / pdf / xlsx / otl / ppt / pptx 等；docx/pdf 默认返回 markdown；ppt/pptx 默认返回 kdc，可传 format=markdown 获取 Markdown；xlsx/xls 默认读取表格选区，可传 format=markdown 整文件抽取。不支持 CSV 与未识别类型。",
+    "description": "读取云文档正文，按文件格式自动返回 Markdown、纯文本或结构化数据：url、link_id、file_id 至少填一个；多填时取 url > link_id > file_id。支持 docx / pdf / html / xml / txt / md / csv / xlsx / otl / ppt / pptx 等。txt 默认 plain；md 默认 markdown，支持 markdown/plain/kdc；csv 默认 markdown，支持 markdown/kdc；html/xml 默认 markdown，支持 markdown/plain/kdc，其中 XML 可能保留标签结构。xlsx/xls/et 传选区走 sheet_range，dbt 传选表走 dbsheet_records。ksheet 按选中表的实际类型返回：普通工作表（sheetType=et）返回选区 sheet_range，智能文档页（sheetType=fp）返回该页正文块结构（content_format=kdc）；未指定 sheet_name/sheet_id 时默认读第一张表，若它是智能文档页则同样返回正文块；需要读普通工作表请显式传 sheet_name 或 sheet_id。",
     "parameters": {
       "type": "object",
       "properties": {
         "enable_upload_medias": {
-          "description": "是否将文档中的多媒体附件上传对象存储，默认 false；为 true 时抽取结果中附件会返回有效期内可下载的 URL。doc/docx/wps/pdf/otl/ppt/pptx 且 format=markdown 或 kdc，以及 xlsx/xls 且 format=markdown 时生效",
+          "description": "是否将文档中的多媒体附件上传对象存储，默认 true；为 true 时抽取结果中的附件返回有效期内可下载 URL。markdown / kdc 抽取路径生效",
           "type": "boolean"
         },
         "file_id": {
@@ -546,7 +549,7 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "format": {
-          "description": "文档内容目标格式。可选值：`markdown` / `plain`（纯文本）/ `kdc`（结构化表示）；默认不传。docx/doc/pdf/wps/otl（markdown|plain|kdc）；ppt/pptx（markdown|kdc）；xlsx/xls 仅 format=markdown 走整文件抽取，其它值或不传则读取表格选区",
+          "description": "文档内容目标格式。可选值：`markdown` / `plain`（纯文本）/ `kdc`（结构化表示）。txt 默认 plain，可选 markdown/plain；md 默认 markdown，可选 markdown/plain/kdc；csv 默认 markdown，可选 markdown/kdc；docx/doc/pdf/wps/html/xml/otl（markdown|plain|kdc）；ppt/pptx（markdown|kdc）；xlsx/xls 传选区则读取表格选区；dbt 传选表则读取表格选区。",
           "type": "string"
         },
         "link_id": {
@@ -554,15 +557,15 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "sheet_id": {
-          "description": "xlsx/ksheet/dbt 选表 ID（数字）；优先级高于 sheet_name。xlsx/xls 在 format=markdown 时不生效",
+          "description": "xlsx/ksheet/dbt 选表 ID（数字）；优先级高于 sheet_name。",
           "type": "number"
         },
         "sheet_name": {
-          "description": "xlsx/ksheet/dbt 选表名称；与 sheet_id 同传时优先 sheet_id。xlsx/xls 在 format=markdown 时不生效",
+          "description": "xlsx/ksheet/dbt 选表名称；与 sheet_id 同传时优先 sheet_id。",
           "type": "string"
         },
         "sheet_range": {
-          "description": "xlsx/ksheet 选区，均为 0-based；不传时走默认首 500 行 × 52 列并截断。xlsx/xls 在 format=markdown 时不生效",
+          "description": "xlsx/ksheet 读取区域，0-based，起止均含；传入则走选区（默认首屏区域）；不传且 sheet_name/sheet_id 不传则 xlsx/xls/et 走 markdown",
           "type": "object",
           "properties": {
             "col_from": {
@@ -584,7 +587,7 @@ export const coreTools: CoreToolDefinition[] = [
           }
         },
         "task_id": {
-          "description": "docx/doc/wps/pdf/otl（format=markdown|plain）、ppt/pptx（format=markdown|kdc）、xlsx/xls（format=markdown）续跑：上次响应 data.task_id",
+          "description": "docx/doc/wps/pdf/otl（format=markdown|plain）、html/xml（format=markdown|plain|kdc）、txt（format=markdown|plain）、md（format=markdown|plain|kdc）、csv（format=markdown|kdc）、ppt/pptx（format=markdown|kdc）、xlsx/xls/dbt（format=markdown）续跑：传上次响应 data.task_id，并保持首次调用的 format",
           "type": "string"
         },
         "url": {
@@ -601,15 +604,15 @@ export const coreTools: CoreToolDefinition[] = [
       "type": "object",
       "properties": {
         "drive_id": {
-          "description": "驱动盘 ID",
+          "description": "源文件所在云盘 ID。不传则按 file_ids 解析",
           "type": "string"
         },
         "dst_drive_id": {
-          "description": "目标盘 ID",
+          "description": "目标云盘 ID。dst_parent_id 为 \"0\" 时必传；指向具体文件夹时可省略",
           "type": "string"
         },
         "dst_parent_id": {
-          "description": "目标父目录，根目录 \"0\"",
+          "description": "目标父文件夹 ID。两种情况：目标是具体文件夹时传该文件夹 ID；目标是某盘根目录时传 \"0\"（须同时传 dst_drive_id）",
           "type": "string"
         },
         "file_ids": {
@@ -621,9 +624,7 @@ export const coreTools: CoreToolDefinition[] = [
         }
       },
       "required": [
-        "drive_id",
         "file_ids",
-        "dst_drive_id",
         "dst_parent_id"
       ]
     }
@@ -639,11 +640,11 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "dst_drive_id": {
-          "description": "目标驱动盘 ID",
+          "description": "目标云盘 ID。dst_parent_id 为 \"0\" 时必传；指向具体文件夹时可省略",
           "type": "string"
         },
         "dst_parent_id": {
-          "description": "目标父目录 ID，根目录为 \"0\"",
+          "description": "目标父目录 ID。两种情况：目标是具体文件夹时传该文件夹 ID；目标是某盘根目录时传 \"0\"（须同时传 dst_drive_id）",
           "type": "string"
         },
         "file_id": {
@@ -660,7 +661,6 @@ export const coreTools: CoreToolDefinition[] = [
         }
       },
       "required": [
-        "dst_drive_id",
         "dst_parent_id"
       ]
     }
@@ -672,7 +672,7 @@ export const coreTools: CoreToolDefinition[] = [
       "type": "object",
       "properties": {
         "drive_id": {
-          "description": "驱动盘 ID",
+          "description": "源文件所在云盘 ID。不传则按 file_id 解析",
           "type": "string"
         },
         "dst_name": {
@@ -806,7 +806,7 @@ export const coreTools: CoreToolDefinition[] = [
   },
   {
     "name": "otl.block_query",
-    "description": "查询指定块的结构与内容，适合在更新前先读取目标块信息。",
+    "description": "查询指定块的结构与内容；仅 file_id 或未传 blockIds 时默认拉全文（blockIds=[\"doc\"]）。读指定块请用 params.blockIds。",
     "parameters": {
       "type": "object",
       "properties": {
@@ -819,7 +819,7 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "params": {
-          "description": "查询参数对象，如 {\"blockIds\": [...]}",
+          "description": "查询参数对象，可选。仅查全文可省略；读指定块传 {\"blockIds\":[\"<blockId>\"]}（勿把 blockIds 写在顶层）",
           "type": "object",
           "properties": {}
         },
@@ -827,10 +827,7 @@ export const coreTools: CoreToolDefinition[] = [
           "description": "文档 URL；与 link_id、file_id 三选一",
           "type": "string"
         }
-      },
-      "required": [
-        "params"
-      ]
+      }
     }
   },
   {
@@ -1560,7 +1557,7 @@ export const coreTools: CoreToolDefinition[] = [
   },
   {
     "name": "sheet.get_range_data",
-    "description": "获取指定工作表中某个矩形选区内的单元格数据。使用 worksheet_id 指定工作表。",
+    "description": "获取指定工作表中某个矩形选区内的单元格数据。使用 worksheet_id 指定工作表。单次请求行跨度上限 5000 行、选区上限 50000 格；目标区域明确时可将选区拆分后分多次调用本工具，读取连续大范围/全文请改用 read_file（自动分批、输出更精简）。",
     "parameters": {
       "type": "object",
       "properties": {
@@ -1573,7 +1570,7 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "range": {
-          "description": "选区范围",
+          "description": "矩形选区为 camelCase 对象 {rowFrom,rowTo,colFrom,colTo}；四项必填，0-based，含端点；不接受 A1 字符串或 snake_case 字段。单次请求行跨度上限 5000 行，且单次选区上限 50000 格；目标区域明确时可将选区拆分后分多次调用本工具，读取连续大范围/全文请改用 read_file",
           "type": "object",
           "properties": {
             "colFrom": {
@@ -1893,14 +1890,13 @@ export const coreTools: CoreToolDefinition[] = [
       },
       "required": [
         "worksheet_id",
-        "filter",
         "range"
       ]
     }
   },
   {
     "name": "sheet.delete_range_data",
-    "description": "删除指定工作表的单元格选区数据",
+    "description": "删除选区行或列并移位（shift_up 上移 / shift_left 左移），不是清空单元格内容。",
     "parameters": {
       "type": "object",
       "properties": {
@@ -2006,7 +2002,7 @@ export const coreTools: CoreToolDefinition[] = [
           "type": "string"
         },
         "range": {
-          "description": "单元格区域，如 A1:C3",
+          "description": "A1 字符串，如 A1:C3；不接受坐标对象。取消合并工具 unmerge_range 使用 snake_case 坐标对象",
           "type": "string"
         },
         "url": {
@@ -2608,6 +2604,147 @@ export const coreTools: CoreToolDefinition[] = [
     }
   },
   {
+    "name": "dbsheet.delete_records",
+    "description": "批量删除数据表中的指定记录。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "is_batch": {
+          "description": "是否批量操作模式",
+          "type": "boolean"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "mode": {
+          "description": "删除模式，include 表示删除指定记录",
+          "type": "string"
+        },
+        "records": {
+          "description": "要删除的记录列表，每项含 id",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "records"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.delete_fields",
+    "description": "批量删除数据表中的指定字段。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "description": "要删除的字段列表，每项含 id",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "fields"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.delete_sheet",
+    "description": "删除多维表格中的指定数据表。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "sheet_id": {
+          "description": "要删除的数据表 ID",
+          "type": "number"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.delete_view",
+    "description": "删除指定数据表中的视图。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "view_id": {
+          "description": "视图 ID",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "view_id"
+      ]
+    }
+  },
+  {
     "name": "kwiki.list_knowledge_views",
     "description": "查询个人知识库列表，支持按名称关键字过滤。",
     "parameters": {
@@ -2641,6 +2778,720 @@ export const coreTools: CoreToolDefinition[] = [
       },
       "required": [
         "kuid"
+      ]
+    }
+  },
+  {
+    "name": "sheet.auto_fit",
+    "description": "自适应列宽或行高。fit_type=columns 自适应列宽，fit_type=rows 自适应行高，fit_type=auto（默认）自动识别：整行区域适应行高，其他适应列宽。自适应后列宽上限 60。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "fit_type": {
+          "description": "自适应类型，默认 auto",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "range": {
+          "description": "单元格区域，如 A1:H10（自适应列宽）、1:10（自适应行高）、A:D（自适应列宽）",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id",
+        "range"
+      ]
+    }
+  },
+  {
+    "name": "sheet.freeze",
+    "description": "冻结前 N 行和前 N 列；两项均为 0 时解冻。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "frozen_col_count": {
+          "description": "冻结列数，非负整数；0 表示不冻结列",
+          "type": "number"
+        },
+        "frozen_row_count": {
+          "description": "冻结行数，非负整数；0 表示不冻结行",
+          "type": "number"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID，正整数",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id",
+        "frozen_row_count",
+        "frozen_col_count"
+      ]
+    }
+  },
+  {
+    "name": "sheet.get_filters",
+    "description": "获取工作表当前筛选条件。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id"
+      ]
+    }
+  },
+  {
+    "name": "sheet.update_filters",
+    "description": "更新工作表某列的筛选条件。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "col": {
+          "description": "列索引，从 0 开始",
+          "type": "number"
+        },
+        "condition": {
+          "description": "筛选条件对象",
+          "type": "object",
+          "properties": {}
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id",
+        "col",
+        "condition"
+      ]
+    }
+  },
+  {
+    "name": "sheet.create_data_validations",
+    "description": "创建数据校验规则。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "数据校验参数对象",
+          "type": "object",
+          "properties": {}
+        },
+        "field_type": {
+          "description": "字段类型，目前通常为 List",
+          "type": "string"
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "range": {
+          "description": "目标区域范围",
+          "type": "object",
+          "properties": {}
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id",
+        "args",
+        "field_type",
+        "range"
+      ]
+    }
+  },
+  {
+    "name": "sheet.update_data_validations",
+    "description": "更新指定区域的数据校验规则。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "数据校验参数对象",
+          "type": "object",
+          "properties": {}
+        },
+        "field_type": {
+          "description": "字段类型，目前通常为 List",
+          "type": "string"
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "range": {
+          "description": "目标区域范围",
+          "type": "object",
+          "properties": {}
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id",
+        "args",
+        "field_type",
+        "range"
+      ]
+    }
+  },
+  {
+    "name": "sheet.create_pivot_table",
+    "description": "在指定工作表上创建数据透视表。创建后可用 update_pivot_table 配置字段布局。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "columnGrand": {
+          "description": "是否显示列总计，默认 true",
+          "type": "boolean"
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "rowGrand": {
+          "description": "是否显示行总计，默认 true",
+          "type": "boolean"
+        },
+        "sourceAddress": {
+          "description": "数据源地址，如 A1:E100 或跨表 'Sheet1'!A1:E100；无 sheet 前缀时自动补当前工作表",
+          "type": "string"
+        },
+        "tableDestination": {
+          "description": "透视表放置位置（如 G1），留空则自动放置",
+          "type": "string"
+        },
+        "tableName": {
+          "description": "透视表名称，留空则自动命名",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id",
+        "sourceAddress"
+      ]
+    }
+  },
+  {
+    "name": "sheet.add_chart",
+    "description": "在指定工作表中添加图表。支持柱形图、条形图、折线图、饼图、面积图、散点图、雷达图、股票图共 31 种类型。添加前建议先调用 chart_information 查看已有图表避免遮盖。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "chartType": {
+          "description": "图表类型，共 31 种",
+          "type": "string"
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "plotBy": {
+          "description": "数据组织方式，默认 columns",
+          "type": "string"
+        },
+        "rectAddress": {
+          "description": "图表摆放位置，如 F1:L10",
+          "type": "string"
+        },
+        "sourceAddress": {
+          "description": "数据源地址，如 A1:D5 或跨表 '数据表'!A1:D5",
+          "type": "string"
+        },
+        "title": {
+          "description": "图表标题",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "worksheet_id": {
+          "description": "工作表 ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "worksheet_id",
+        "chartType",
+        "sourceAddress",
+        "rectAddress",
+        "title"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.create_fields",
+    "description": "在指定数据表中批量创建字段，支持文本、数值、单选、多选、日期、附件等多种类型。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "description": "要创建的字段列表，每项须含 name 和 type",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "prefer_id": {
+          "description": "是否使用字段 ID 作为 key",
+          "type": "boolean"
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "fields"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.update_fields",
+    "description": "批量更新数据表中已有字段的名称、选项等属性，每项必须包含字段 ID。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "description": "要更新的字段列表，每项须含 id",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "omit_failure": {
+          "description": "部分字段更新失败时是否继续执行",
+          "type": "boolean"
+        },
+        "prefer_id": {
+          "description": "是否使用字段 ID 作为 key",
+          "type": "boolean"
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "fields"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.views_list",
+    "description": "列出指定数据表下的视图。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "sheet_id": {
+          "description": "数据表 ID",
+          "type": "number"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.create_view",
+    "description": "在指定数据表中创建新视图，支持 Grid/Kanban/Gallery/Form/Gantt/Calendar 等类型。type=Gantt 创建成功后必须立刻调用 dbsheet.update_view 传入 begin_field 与 end_field（Date 列），否则时间轴无条。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "group_field": {
+          "description": "分组字段名称",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "name": {
+          "description": "视图名称",
+          "type": "string"
+        },
+        "prefer_id": {
+          "description": "是否使用字段 ID 作为 key",
+          "type": "boolean"
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "type": {
+          "description": "视图类型：Grid / Kanban / Gallery / Form / Gantt / Calendar",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "name",
+        "type"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.update_view_setting",
+    "description": "设置视图的筛选、排序、分组（action=add 新增 / remove 移除）或列宽。sort/group/filter 为增量设置，至少传一项；widths 可单独设置，也可与条件同传（合并为一次更新，避免只写成功一部分）。action=remove 会把传入的 sort/group/filter 原样交给内核 method=remove，请先用 dbsheet.views_get 回读当前配置，只传需要移除的条件；未传的配置类型不会下发。条目格式：sort/group 每项 {field, order}（order: asc/desc；group 可选 unit），filter 每项 {field, operator, values}（values 为字符串数组）。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "description": "设置动作：add 新增 / remove 移除；传 sort/group/filter 时必填",
+          "type": "string"
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "filter": {
+          "description": "筛选条件数组，每项 {field, operator, values}；operator 如 Equals/NotEqu/Contains/Greater 等值类操作符（Empty/NotEmpty 内核不支持，会被拒），values 为字符串数组",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "group": {
+          "description": "分组条件数组，每项 {field, order}；order 为 asc/desc，可选 unit（如 Text/Year/Month）",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "prefer_id": {
+          "description": "是否使用字段 ID 作为 key",
+          "type": "boolean"
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "sort": {
+          "description": "排序条件数组，每项 {field, order}；order 为 asc/desc",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        },
+        "view_id": {
+          "description": "视图 ID",
+          "type": "string"
+        },
+        "widths": {
+          "description": "列宽条件数组，每项 {field, width}，width 为像素",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "sheet_id",
+        "view_id"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.get_record",
+    "description": "获取数据表中某条指定记录的完整字段内容。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "link_value": {
+          "description": "关联字段值格式：id / value",
+          "type": "string"
+        },
+        "prefer_id": {
+          "description": "是否使用字段 ID 作为 key",
+          "type": "boolean"
+        },
+        "record_id": {
+          "description": "记录 ID",
+          "type": "string"
+        },
+        "sheet_id": {
+          "description": "目标数据表 ID",
+          "type": "number"
+        },
+        "show_fields_info": {
+          "description": "是否返回字段定义信息",
+          "type": "boolean"
+        },
+        "show_record_extra_info": {
+          "description": "是否返回记录额外信息",
+          "type": "boolean"
+        },
+        "text_value": {
+          "description": "文本值格式：original / display",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "record_id"
+      ]
+    }
+  },
+  {
+    "name": "dbsheet.records_search",
+    "description": "按筛选条件检索多条记录。body 根级须含 records。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "description": "可选整包请求体；与顶层字段混用时同键以顶层为准",
+          "type": "object",
+          "properties": {}
+        },
+        "file_id": {
+          "description": "文件 id；与 url、link_id 三选一",
+          "type": "string"
+        },
+        "link_id": {
+          "description": "分享 id；与 url、file_id 三选一",
+          "type": "string"
+        },
+        "prefer_id": {
+          "description": "是否使用字段 / 选项 ID 而不是字段 / 选项名来标识",
+          "type": "boolean"
+        },
+        "records": {
+          "description": "记录 ID 列表（字符串数组）",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sheet_id": {
+          "description": "数据表 ID",
+          "type": "number"
+        },
+        "show_fields_info": {
+          "description": "是否返回 fields 结构体展示字段信息",
+          "type": "boolean"
+        },
+        "show_record_extra_info": {
+          "description": "是否返回创建者、创建时间、最后修改者、最后修改时间信息",
+          "type": "boolean"
+        },
+        "text_value": {
+          "description": "返回值类型，可选 original、text、compound",
+          "type": "string"
+        },
+        "url": {
+          "description": "文档 URL；与 link_id、file_id 三选一",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id"
+      ]
+    }
+  },
+  {
+    "name": "list_deleted_files",
+    "description": "获取回收站文件列表。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drive_id": {
+          "description": "按驱动盘过滤",
+          "type": "string"
+        },
+        "page_size": {
+          "description": "分页大小，常用 20，限制在 1–100；超过 100 按 100；小于 1 按 20",
+          "type": "number"
+        },
+        "page_token": {
+          "description": "分页 token",
+          "type": "string"
+        },
+        "with_drive": {
+          "description": "是否返回所属驱动盘信息",
+          "type": "boolean"
+        },
+        "with_ext_attrs": {
+          "description": "是否返回扩展属性",
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  {
+    "name": "restore_deleted_file",
+    "description": "还原回收站中的文件。file_id 须为 list_deleted_files 返回的 items[].id，勿用 url/link_id 或 get_file_info 的 id。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "回收站文件 ID，由 list_deleted_files 返回的 items[].id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file_id"
       ]
     }
   },
